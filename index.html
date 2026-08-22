@@ -113,6 +113,7 @@
     .danger-btn { background: var(--danger-soft); color: var(--danger); }
 
     .summary-strip { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; }
+    .home-plan-summary { grid-template-columns: repeat(2, 1fr); margin-bottom: 0; }
     .summary-cell { padding: 13px 10px; min-width: 0; }
     .summary-cell + .summary-cell { border-left: 1px solid var(--line); }
     .summary-cell span { display: block; color: var(--muted); font-size: 10px; }
@@ -152,14 +153,6 @@
     .plan-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 11px; }
     .plan-card-head h2 { margin: 0; font-size: 15px; }
     .plan-card-head span { color: var(--muted); font-size: 11px; }
-    .salary-total { font-size: 24px; font-weight: 780; font-variant-numeric: tabular-nums; }
-    .salary-meta { margin-top: 4px; color: var(--muted); font-size: 11px; }
-    .salary-list { display: grid; gap: 8px; margin-top: 12px; }
-    .salary-row { display: grid; grid-template-columns: 32px minmax(0,1fr) auto; gap: 9px; align-items: center; padding-top: 9px; border-top: 1px solid var(--line); }
-    .salary-mark { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 14px; font-weight: 800; }
-    .salary-row strong { display: block; font-size: 12px; }
-    .salary-row small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
-    .salary-row .money { font-size: 12px; font-weight: 750; }
     .repayment-list { display: grid; gap: 8px; }
     .repayment-item { display: grid; grid-template-columns: 28px minmax(0,1fr) auto; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
     .repayment-check { width: 24px; height: 24px; border: 1px solid #c8d1ca; border-radius: 50%; background: white; color: white; display: grid; place-items: center; cursor: pointer; }
@@ -268,9 +261,8 @@
         <div class="account-list" id="homeAccounts"></div>
       </section>
       <section class="section">
-        <div class="section-head"><h2 class="section-title">工资与还款</h2><button class="text-btn" data-nav="plans">查看清单</button></div>
-        <div class="summary-strip">
-          <div class="summary-cell"><span>本月工资</span><strong class="money" id="homeSalaryTotal">¥0</strong></div>
+        <div class="section-head"><h2 class="section-title">还款清单</h2><button class="text-btn" data-nav="plans">查看清单</button></div>
+        <div class="summary-strip home-plan-summary">
           <div class="summary-cell"><span>待还项目</span><strong id="homeRepaymentPending">0 项</strong></div>
           <div class="summary-cell"><span>本月还款</span><strong class="money" id="homeRepaymentTotal">¥0</strong></div>
         </div>
@@ -308,11 +300,6 @@
 
     <section class="view" id="view-plans">
       <div class="page-head"><h1>清单</h1><button class="primary-btn" data-open-repayment>+ 还款</button></div>
-      <div class="plan-card">
-        <div class="plan-card-head"><div><h2>本月工资</h2><div class="salary-meta" id="salaryMonthLabel"></div></div><button class="text-btn" data-open-salary>+ 记录工资</button></div>
-        <div class="salary-total money" id="salaryMonthTotal">¥0.00</div>
-        <div class="salary-list" id="salaryList"></div>
-      </div>
       <div class="plan-card">
         <div class="plan-card-head"><div><h2>本月还款清单</h2><span id="repaymentSummary"></span></div><button class="text-btn" data-open-repayment>管理</button></div>
         <div class="repayment-list" id="repaymentList"></div>
@@ -384,22 +371,6 @@
           <div class="field"><label for="recordNote">备注（可选）</label><textarea id="recordNote" maxlength="120" placeholder="这笔变化的说明"></textarea></div>
         </div>
         <div class="form-actions"><button type="button" class="secondary-btn" data-close-sheet>取消</button><button type="submit" class="primary-btn">保存记录</button></div>
-      </form>
-    </section>
-  </div>
-
-  <div class="scrim" id="salaryScrim" role="dialog" aria-modal="true" aria-labelledby="salarySheetTitle">
-    <section class="sheet">
-      <div class="sheet-grip"></div>
-      <div class="sheet-head"><h2 id="salarySheetTitle">记录工资收入</h2><button class="close-btn" data-close-sheet aria-label="关闭">×</button></div>
-      <form id="salaryForm">
-        <div class="form-grid">
-          <div class="field"><label for="salaryAmount">工资金额</label><input id="salaryAmount" type="number" inputmode="decimal" min="0.01" step="0.01" required placeholder="0.00"></div>
-          <div class="field"><label for="salaryAccount">到账账户</label><select id="salaryAccount" required></select></div>
-          <div class="field"><label for="salaryDate">到账日期</label><input id="salaryDate" type="date" required></div>
-          <div class="field"><label for="salaryNote">备注（可选）</label><textarea id="salaryNote" maxlength="120" placeholder="例如：8 月工资"></textarea></div>
-        </div>
-        <div class="form-actions"><button type="button" class="secondary-btn" data-close-sheet>取消</button><button type="submit" class="primary-btn">保存工资</button></div>
       </form>
     </section>
   </div>
@@ -557,10 +528,8 @@
         document.getElementById('allAccounts').innerHTML = filtered.length ? filtered.map(a => accountMarkup(a, true)).join('') : emptyMarkup('account');
 
         const currentMonth = monthKey();
-        const homeSalaryTotal = state.salaryRecords.filter(r => r.date?.startsWith(currentMonth)).reduce((sum, r) => sum + Number(r.amount || 0), 0);
         const paidRepayments = state.repayments.filter(item => state.repaymentPaid[`${item.id}:${currentMonth}`]);
         const homeRepaymentTotal = paidRepayments.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-        document.getElementById('homeSalaryTotal').textContent = money(homeSalaryTotal, true);
         document.getElementById('homeRepaymentPending').textContent = `${state.repayments.length - paidRepayments.length} 项`;
         document.getElementById('homeRepaymentTotal').textContent = money(homeRepaymentTotal, true);
 
@@ -603,12 +572,6 @@
       function renderPlans() {
         const now = new Date();
         const currentMonth = monthKey(now);
-        const currentSalary = state.salaryRecords.filter(r => r.date && r.date.startsWith(currentMonth)).sort((a, b) => b.date.localeCompare(a.date));
-        const salaryTotal = currentSalary.reduce((sum, r) => sum + Number(r.amount || 0), 0);
-        document.getElementById('salaryMonthLabel').textContent = `${now.getFullYear()} 年 ${now.getMonth() + 1} 月 · ${currentSalary.length} 笔`;
-        document.getElementById('salaryMonthTotal').textContent = money(salaryTotal);
-        document.getElementById('salaryList').innerHTML = currentSalary.length ? currentSalary.map(r => `<div class="salary-row"><div class="salary-mark">薪</div><div><strong>${esc(r.accountName || '工资收入')}</strong><small>${shortDate(r.date)}${r.note ? ` · ${esc(r.note)}` : ''}</small></div><div class="money">+${money(r.amount)}</div></div>`).join('') : '<div class="plan-empty">本月还没有工资记录，点击“记录工资”添加。</div>';
-
         const repayments = [...state.repayments].sort((a, b) => Number(a.dueDay) - Number(b.dueDay));
         let paidCount = 0;
         const repaymentHtml = repayments.map(item => {
@@ -625,7 +588,7 @@
         }).join('');
         document.getElementById('repaymentSummary').textContent = repayments.length ? `${paidCount}/${repayments.length} 已完成` : '还没有项目';
         document.getElementById('repaymentList').innerHTML = repaymentHtml || '<div class="plan-empty">添加房贷、信用卡、花呗等每月固定还款。</div>';
-        document.querySelectorAll('#salaryMonthTotal, #salaryList .money, #repaymentList .money').forEach(el => el.classList.toggle('amount-hidden', !!state.settings.hideAmounts));
+        document.querySelectorAll('#repaymentList .money').forEach(el => el.classList.toggle('amount-hidden', !!state.settings.hideAmounts));
       }
 
       function trendData() {
@@ -713,16 +676,6 @@
         showSheet('recordScrim');
       }
 
-      function openSalary() {
-        if (!state.accounts.filter(a => a.type !== 'debt').length) { showToast('请先新增一个到账账户'); openAccount(); return; }
-        document.getElementById('salaryAccount').innerHTML = accountOptions(state.accounts.find(a => a.type === 'bank')?.id || state.accounts.find(a => a.type !== 'debt')?.id);
-        document.getElementById('salaryAmount').value = '';
-        document.getElementById('salaryDate').value = dateKey();
-        document.getElementById('salaryNote').value = `${new Date().getMonth() + 1} 月工资`;
-        showSheet('salaryScrim');
-        setTimeout(() => document.getElementById('salaryAmount').focus(), 220);
-      }
-
       function openRepayment(item) {
         if (!state.accounts.filter(a => a.type !== 'debt').length) { showToast('请先新增一个扣款账户'); openAccount(); return; }
         const editing = !!item;
@@ -786,7 +739,6 @@
         const nav = event.target.closest('[data-nav]'); if (nav) navigate(nav.dataset.nav);
         const addAccount = event.target.closest('[data-open-account]'); if (addAccount) openAccount();
         const addRecord = event.target.closest('[data-open-record]'); if (addRecord) openRecord();
-        const addSalary = event.target.closest('[data-open-salary]'); if (addSalary) openSalary();
         const addRepayment = event.target.closest('[data-open-repayment]'); if (addRepayment) openRepayment();
         const toggle = event.target.closest('[data-toggle-repayment]'); if (toggle) { event.stopPropagation(); toggleRepayment(toggle.dataset.toggleRepayment); }
         const editRepayment = event.target.closest('[data-edit-repayment]'); if (editRepayment) { event.stopPropagation(); openRepayment(state.repayments.find(r => r.id === editRepayment.dataset.editRepayment)); }
@@ -803,20 +755,6 @@
       document.getElementById('privacyBtn').addEventListener('click', togglePrivacy);
       document.getElementById('settingsPrivacyBtn').addEventListener('click', togglePrivacy);
       window.addEventListener('resize', () => requestAnimationFrame(renderChart));
-
-      document.getElementById('salaryForm').addEventListener('submit', event => {
-        event.preventDefault();
-        const account = state.accounts.find(a => a.id === document.getElementById('salaryAccount').value);
-        const amount = Number(document.getElementById('salaryAmount').value);
-        const date = document.getElementById('salaryDate').value;
-        if (!account || !Number.isFinite(amount) || amount <= 0 || !date) { showToast('请填写工资金额、账户和日期'); return; }
-        const before = Number(account.balance);
-        account.balance = Math.round((before + amount) * 100) / 100;
-        const record = { id: uid(), accountId: account.id, accountName: account.name, accountType: account.type, delta: amount, before, after: account.balance, category: '工资收入', note: document.getElementById('salaryNote').value.trim() || '工资收入', date, createdAt: new Date().toISOString() };
-        state.records.push(record);
-        state.salaryRecords.push({ id: uid(), recordId: record.id, accountId: account.id, accountName: account.name, amount, date, note: document.getElementById('salaryNote').value.trim() });
-        closeSheets(); saveState('工资收入已记录');
-      });
 
       document.getElementById('repaymentForm').addEventListener('submit', event => {
         event.preventDefault();
