@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#f6f7f4">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="我的账本">
+  <title>我的账本</title>
+  <style>
+    :root {
+      --bg: #f6f7f4;
+      --surface: #ffffff;
+      --surface-2: #eef1ed;
+      --text: #15201b;
+      --muted: #68736d;
+      --line: #dfe5e0;
+      --accent: #167a52;
+      --accent-soft: #e5f3ec;
+      --danger: #bd403c;
+      --danger-soft: #f9eae8;
+      --warning: #a26b14;
+      --investment: #3566a8;
+      --cash: #8c5b32;
+      --shadow: 0 12px 30px rgba(26, 42, 34, .10);
+      --radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); }
+    body { overscroll-behavior-y: none; }
+    button, input, select, textarea { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+
+    .app {
+      min-height: 100dvh;
+      padding: max(18px, env(safe-area-inset-top)) 16px calc(92px + env(safe-area-inset-bottom));
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .topbar { display: flex; align-items: center; justify-content: space-between; min-height: 42px; margin-bottom: 18px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-mark { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; background: var(--text); color: white; font-size: 17px; font-weight: 800; }
+    .brand-name { font-size: 17px; font-weight: 750; }
+    .today { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .top-actions { display: flex; gap: 8px; }
+    .icon-btn { width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); display: grid; place-items: center; cursor: pointer; }
+    .icon-btn:active { transform: scale(.96); }
+    .icon-btn svg { width: 19px; height: 19px; }
+
+    .view { display: none; animation: enter .18s ease-out; }
+    .view.active { display: block; }
+    @keyframes enter { from { opacity: .45; transform: translateY(4px); } }
+
+    .hero { background: var(--text); color: white; border-radius: var(--radius); padding: 20px; position: relative; overflow: hidden; }
+    .hero::after { content: ""; position: absolute; right: -24px; top: -34px; width: 120px; height: 120px; border: 22px solid rgba(255,255,255,.06); border-radius: 50%; }
+    .eyebrow { color: rgba(255,255,255,.62); font-size: 12px; }
+    .net-value { margin-top: 7px; font-size: clamp(30px, 9vw, 42px); line-height: 1.1; font-weight: 780; font-variant-numeric: tabular-nums; letter-spacing: 0; overflow-wrap: anywhere; }
+    .hero-row { display: flex; gap: 24px; margin-top: 20px; }
+    .hero-stat { min-width: 0; }
+    .hero-stat span { display: block; color: rgba(255,255,255,.56); font-size: 11px; }
+    .hero-stat strong { display: block; margin-top: 4px; font-size: 15px; font-variant-numeric: tabular-nums; }
+    .month-pill { margin-left: auto; align-self: end; padding: 5px 8px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; font-size: 11px; white-space: nowrap; }
+
+    .section { margin-top: 24px; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+    .section-title { font-size: 15px; font-weight: 750; margin: 0; }
+    .text-btn { border: 0; background: transparent; color: var(--accent); font-size: 13px; font-weight: 650; padding: 6px 0; cursor: pointer; }
+
+    .overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+    .metric { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; min-height: 90px; }
+    .metric-top { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 12px; }
+    .metric-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    .metric-value { margin-top: 14px; font-weight: 750; font-size: 19px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .metric.debt .metric-dot { background: var(--danger); }
+    .metric.invest .metric-dot { background: var(--investment); }
+    .metric.cash .metric-dot { background: var(--cash); }
+
+    .chart-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
+    .chart-meta { display: flex; justify-content: space-between; align-items: baseline; }
+    .chart-meta span { color: var(--muted); font-size: 11px; }
+    .chart-meta strong { font-size: 14px; }
+    #trendChart { display: block; width: 100%; height: 120px; margin-top: 8px; }
+    .chart-labels { display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; }
+
+    .account-list, .record-list { display: grid; gap: 9px; }
+    .account-item { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 11px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
+    .account-icon { width: 42px; height: 42px; border-radius: 8px; display: grid; place-items: center; font-size: 12px; font-weight: 800; color: var(--accent); background: var(--accent-soft); }
+    .account-icon.debt { color: var(--danger); background: var(--danger-soft); }
+    .account-icon.investment { color: var(--investment); background: #e9eff8; }
+    .account-icon.cash { color: var(--cash); background: #f4ece5; }
+    .account-info { min-width: 0; }
+    .account-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .account-sub { margin-top: 4px; color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .account-end { text-align: right; min-width: 0; }
+    .account-balance { font-size: 14px; font-weight: 750; font-variant-numeric: tabular-nums; max-width: 138px; overflow-wrap: anywhere; }
+    .quick-btn { margin-top: 5px; border: 0; background: transparent; color: var(--accent); padding: 0; font-size: 11px; cursor: pointer; }
+
+    .empty { border: 1px dashed #cbd3cd; border-radius: var(--radius); padding: 28px 18px; text-align: center; color: var(--muted); }
+    .empty-symbol { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-2); color: var(--accent); margin: 0 auto 10px; font-size: 22px; }
+    .empty strong { display: block; color: var(--text); font-size: 14px; }
+    .empty span { display: block; font-size: 12px; margin-top: 5px; }
+
+    .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .page-head h1 { margin: 0; font-size: 24px; letter-spacing: 0; }
+    .primary-btn, .secondary-btn, .danger-btn { min-height: 42px; border-radius: 8px; padding: 0 14px; border: 0; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .primary-btn { background: var(--accent); color: white; }
+    .secondary-btn { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+    .danger-btn { background: var(--danger-soft); color: var(--danger); }
+
+    .summary-strip { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; }
+    .summary-cell { padding: 13px 10px; min-width: 0; }
+    .summary-cell + .summary-cell { border-left: 1px solid var(--line); }
+    .summary-cell span { display: block; color: var(--muted); font-size: 10px; }
+    .summary-cell strong { display: block; margin-top: 5px; font-size: 13px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+    .filter-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px; padding-bottom: 2px; }
+    .filter-row::-webkit-scrollbar { display: none; }
+    .chip { flex: 0 0 auto; border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px; min-height: 34px; padding: 0 13px; font-size: 12px; cursor: pointer; }
+    .chip.active { background: var(--text); border-color: var(--text); color: white; }
+    .search-wrap { position: relative; margin-bottom: 12px; }
+    .search-wrap input { width: 100%; height: 42px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 0 12px 0 38px; color: var(--text); outline: none; font-size: 13px; }
+    .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .search-glyph { position: absolute; left: 13px; top: 11px; color: var(--muted); font-size: 16px; }
+
+    .date-group { color: var(--muted); font-size: 11px; font-weight: 700; margin: 10px 2px 6px; }
+    .record-item { display: grid; grid-template-columns: 36px minmax(0,1fr) auto; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 11px 12px; }
+    .record-sign { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 800; }
+    .record-sign.minus { background: var(--danger-soft); color: var(--danger); }
+    .record-title { font-size: 13px; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .record-note { margin-top: 3px; font-size: 10px; color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .record-end { text-align: right; }
+    .record-amount { font-size: 13px; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .record-balance { margin-top: 3px; color: var(--muted); font-size: 10px; }
+
+    .settings-group { margin-bottom: 18px; }
+    .plan-alert { background: var(--text); color: white; border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+    .plan-alert.overdue { background: #7c322e; }
+    .plan-alert-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; font-weight: 750; }
+    .plan-alert-title span:last-child { color: rgba(255,255,255,.7); font-size: 11px; font-weight: 500; white-space: nowrap; }
+    .plan-alert-main { margin-top: 9px; font-size: 22px; font-weight: 780; font-variant-numeric: tabular-nums; }
+    .plan-alert-note { margin-top: 5px; color: rgba(255,255,255,.68); font-size: 11px; line-height: 1.5; }
+    .plan-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .plan-actions .secondary-btn { background: rgba(255,255,255,.12); color: white; border-color: rgba(255,255,255,.18); min-height: 34px; font-size: 11px; }
+    .plan-actions .primary-btn { background: white; color: var(--text); min-height: 34px; font-size: 11px; }
+    .plan-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
+    .plan-card + .plan-card { margin-top: 12px; }
+    .plan-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 11px; }
+    .plan-card-head h2 { margin: 0; font-size: 15px; }
+    .plan-card-head span { color: var(--muted); font-size: 11px; }
+    .salary-total { font-size: 24px; font-weight: 780; font-variant-numeric: tabular-nums; }
+    .salary-meta { margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .salary-list { display: grid; gap: 8px; margin-top: 12px; }
+    .salary-row { display: grid; grid-template-columns: 32px minmax(0,1fr) auto; gap: 9px; align-items: center; padding-top: 9px; border-top: 1px solid var(--line); }
+    .salary-mark { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 14px; font-weight: 800; }
+    .salary-row strong { display: block; font-size: 12px; }
+    .salary-row small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .salary-row .money { font-size: 12px; font-weight: 750; }
+    .repayment-list { display: grid; gap: 8px; }
+    .repayment-item { display: grid; grid-template-columns: 28px minmax(0,1fr) auto; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+    .repayment-check { width: 24px; height: 24px; border: 1px solid #c8d1ca; border-radius: 50%; background: white; color: white; display: grid; place-items: center; cursor: pointer; }
+    .repayment-check.paid { background: var(--accent); border-color: var(--accent); }
+    .repayment-info { min-width: 0; }
+    .repayment-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .repayment-sub { margin-top: 3px; color: var(--muted); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .repayment-end { text-align: right; }
+    .repayment-amount { font-size: 13px; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .repayment-due { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .repayment-due.soon { color: var(--warning); }
+    .repayment-due.late { color: var(--danger); font-weight: 700; }
+    .plan-empty { padding: 14px 0 3px; color: var(--muted); font-size: 12px; text-align: center; }
+    .holiday-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .holiday-tag { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 10px; }
+    .holiday-tag button { border: 0; background: transparent; color: var(--muted); padding: 0; font-size: 14px; line-height: 1; cursor: pointer; }
+    .settings-label { color: var(--muted); font-size: 11px; font-weight: 700; margin: 0 2px 7px; }
+    .settings-list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+    .setting-row { width: 100%; min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 14px; border: 0; background: var(--surface); color: var(--text); text-align: left; cursor: pointer; }
+    .setting-row + .setting-row { border-top: 1px solid var(--line); }
+    .setting-row strong { font-size: 13px; }
+    .setting-row small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 400; }
+    .setting-end { color: var(--muted); font-size: 12px; }
+
+    .bottom-nav { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; padding: 7px 8px calc(7px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.96); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(5, 1fr); backdrop-filter: blur(14px); }
+    .nav-btn { border: 0; background: transparent; color: #7d8881; height: 50px; display: grid; place-items: center; align-content: center; gap: 3px; font-size: 10px; cursor: pointer; }
+    .nav-btn svg { width: 20px; height: 20px; }
+    .nav-btn.active { color: var(--accent); font-weight: 750; }
+
+    .scrim { display: none; position: fixed; z-index: 50; inset: 0; background: rgba(9, 18, 13, .48); }
+    .scrim.open { display: block; }
+    .sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 91dvh; overflow-y: auto; border-radius: 14px 14px 0 0; background: var(--surface); padding: 8px 18px calc(20px + env(safe-area-inset-bottom)); animation: rise .22s ease-out; }
+    @keyframes rise { from { transform: translateY(30px); opacity: .75; } }
+    .sheet-grip { width: 36px; height: 4px; border-radius: 999px; background: #d5dbd7; margin: 0 auto 14px; }
+    .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .sheet-head h2 { margin: 0; font-size: 19px; }
+    .close-btn { width: 34px; height: 34px; border: 0; border-radius: 50%; background: var(--surface-2); color: var(--text); font-size: 20px; cursor: pointer; }
+    .form-grid { display: grid; gap: 13px; }
+    .field label { display: block; margin: 0 0 6px 2px; color: var(--muted); font-size: 11px; font-weight: 650; }
+    .field input, .field select, .field textarea { width: 100%; border: 1px solid var(--line); background: #fbfcfa; color: var(--text); border-radius: 8px; padding: 0 12px; outline: none; font-size: 15px; }
+    .field input, .field select { height: 46px; }
+    .field textarea { min-height: 72px; padding-top: 11px; resize: vertical; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .segmented { display: grid; grid-template-columns: repeat(2, 1fr); gap: 3px; padding: 3px; background: var(--surface-2); border-radius: 8px; }
+    .segment { height: 40px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer; }
+    .segment.active { background: white; color: var(--text); box-shadow: 0 1px 4px rgba(23,35,29,.09); }
+    .form-actions { display: grid; grid-template-columns: 1fr 1.7fr; gap: 9px; margin-top: 18px; }
+    .full-action { grid-template-columns: 1fr; }
+    .delete-link { width: 100%; margin-top: 10px; min-height: 40px; border: 0; background: transparent; color: var(--danger); font-size: 12px; cursor: pointer; }
+
+    .toast { position: fixed; z-index: 80; left: 50%; bottom: calc(82px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: #17211c; color: white; border-radius: 8px; padding: 10px 14px; font-size: 12px; opacity: 0; pointer-events: none; transition: .2s; white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .amount-hidden { filter: blur(7px); user-select: none; }
+    #importFile { display: none; }
+
+    @media (min-width: 800px) {
+      .app { padding-left: 104px; padding-bottom: 38px; max-width: 980px; }
+      .bottom-nav { left: calc(50% - 480px); right: auto; top: 90px; bottom: auto; width: 76px; grid-template-columns: 1fr; gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; }
+      .overview-grid { grid-template-columns: repeat(4, 1fr); }
+      .sheet { width: 520px; left: 50%; right: auto; transform: translateX(-50%); bottom: 24px; border-radius: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">账</div>
+        <div><div class="brand-name">我的账本</div><div class="today" id="todayText"></div></div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="privacyBtn" title="隐藏金额" aria-label="隐藏金额"><i data-lucide="eye"></i></button>
+        <button class="icon-btn" data-open-record title="记一笔" aria-label="记一笔"><i data-lucide="plus"></i></button>
+      </div>
+    </header>
+
+    <section class="view active" id="view-home">
+      <div class="hero">
+        <div class="eyebrow">净资产</div>
+        <div class="net-value money" id="netWorth">¥0.00</div>
+        <div class="hero-row">
+          <div class="hero-stat"><span>总资产</span><strong class="money" id="heroAssets">¥0.00</strong></div>
+          <div class="hero-stat"><span>总欠款</span><strong class="money" id="heroDebt">¥0.00</strong></div>
+          <div class="month-pill" id="monthChange">本月 ¥0</div>
+        </div>
+      </div>
+
+      <div class="overview-grid">
+        <div class="metric"><div class="metric-top"><span>银行卡</span><i class="metric-dot"></i></div><div class="metric-value money" id="bankTotal">¥0</div></div>
+        <div class="metric cash"><div class="metric-top"><span>存款与现金</span><i class="metric-dot"></i></div><div class="metric-value money" id="depositTotal">¥0</div></div>
+        <div class="metric invest"><div class="metric-top"><span>投资</span><i class="metric-dot"></i></div><div class="metric-value money" id="investmentTotal">¥0</div></div>
+        <div class="metric debt"><div class="metric-top"><span>待还欠款</span><i class="metric-dot"></i></div><div class="metric-value money" id="debtTotal">¥0</div></div>
+      </div>
+
+      <section class="section">
+        <div class="section-head"><h2 class="section-title">资产趋势</h2><span class="today">近 7 天</span></div>
+        <div class="chart-card">
+          <div class="chart-meta"><span>净资产变化</span><strong id="trendDelta">¥0.00</strong></div>
+          <canvas id="trendChart"></canvas>
+          <div class="chart-labels" id="chartLabels"></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><h2 class="section-title">我的账户</h2><button class="text-btn" data-nav="accounts">管理账户</button></div>
+        <div class="account-list" id="homeAccounts"></div>
+      </section>
+    </section>
+
+    <section class="view" id="view-accounts">
+      <div class="page-head"><h1>账户</h1><button class="primary-btn" data-open-account>+ 新增</button></div>
+      <div class="summary-strip">
+        <div class="summary-cell"><span>账户数</span><strong id="accountCount">0</strong></div>
+        <div class="summary-cell"><span>资产</span><strong class="money" id="accountAssets">¥0</strong></div>
+        <div class="summary-cell"><span>欠款</span><strong class="money" id="accountDebt">¥0</strong></div>
+      </div>
+      <div class="filter-row" id="accountFilters">
+        <button class="chip active" data-account-filter="all">全部</button>
+        <button class="chip" data-account-filter="bank">银行卡</button>
+        <button class="chip" data-account-filter="deposit">存款</button>
+        <button class="chip" data-account-filter="investment">投资</button>
+        <button class="chip" data-account-filter="debt">欠款</button>
+        <button class="chip" data-account-filter="cash">现金</button>
+      </div>
+      <div class="account-list" id="allAccounts"></div>
+    </section>
+
+    <section class="view" id="view-records">
+      <div class="page-head"><h1>流水</h1><button class="primary-btn" data-open-record>+ 记一笔</button></div>
+      <div class="search-wrap"><span class="search-glyph">⌕</span><input id="recordSearch" type="search" placeholder="搜索账户、分类或备注" autocomplete="off"></div>
+      <div class="filter-row" id="recordFilters">
+        <button class="chip active" data-record-filter="all">全部</button>
+        <button class="chip" data-record-filter="increase">增加</button>
+        <button class="chip" data-record-filter="decrease">减少</button>
+      </div>
+      <div id="recordGroups"></div>
+    </section>
+
+    <section class="view" id="view-plans">
+      <div class="page-head"><h1>计划</h1><button class="primary-btn" data-open-repayment>+ 还款</button></div>
+      <div id="paydayAlert"></div>
+      <div class="plan-card">
+        <div class="plan-card-head"><div><h2>本月工资</h2><div class="salary-meta" id="salaryMonthLabel"></div></div><button class="text-btn" data-open-salary>+ 记录工资</button></div>
+        <div class="salary-total money" id="salaryMonthTotal">¥0.00</div>
+        <div class="salary-list" id="salaryList"></div>
+      </div>
+      <div class="plan-card">
+        <div class="plan-card-head"><div><h2>本月还款清单</h2><span id="repaymentSummary"></span></div><button class="text-btn" data-open-repayment>管理</button></div>
+        <div class="repayment-list" id="repaymentList"></div>
+      </div>
+      <div class="plan-card">
+        <div class="plan-card-head"><div><h2>发薪日设置</h2><span>每月固定日期</span></div></div>
+        <div class="form-grid">
+          <div class="field"><label for="paydayDay">发薪日</label><input id="paydayDay" type="number" min="1" max="28" inputmode="numeric"></div>
+          <div class="field"><label for="holidayDate">法定节假日（手动添加）</label><div style="display:flex;gap:8px"><input id="holidayDate" type="date" style="flex:1"><button type="button" class="secondary-btn" id="addHolidayBtn">添加</button></div></div>
+        </div>
+        <div class="holiday-list" id="holidayList"></div>
+        <div class="salary-meta" style="margin-top:10px">周末和这里添加的节假日会自动顺延到下一个工作日。</div>
+      </div>
+    </section>
+
+    <section class="view" id="view-settings">
+      <div class="page-head"><h1>设置</h1></div>
+      <div class="settings-group">
+        <div class="settings-label">数据</div>
+        <div class="settings-list">
+          <button class="setting-row" id="exportBtn"><span><strong>导出备份</strong><small>JSON 完整数据</small></span><span class="setting-end">导出</span></button>
+          <button class="setting-row" id="importBtn"><span><strong>恢复备份</strong><small>覆盖当前账户与流水</small></span><span class="setting-end">选择文件</span></button>
+          <button class="setting-row" id="clearBtn"><span><strong>清空全部数据</strong><small id="storageStats">0 个账户 · 0 条流水</small></span><span class="setting-end">清空</span></button>
+        </div>
+      </div>
+      <div class="settings-group">
+        <div class="settings-label">偏好</div>
+        <div class="settings-list">
+          <button class="setting-row" id="settingsPrivacyBtn"><span><strong>金额隐私</strong><small>隐藏页面中的金额</small></span><span class="setting-end" id="privacyStatus">已关闭</span></button>
+        </div>
+      </div>
+      <div class="settings-group">
+        <div class="settings-label">存储</div>
+        <div class="settings-list">
+          <div class="setting-row" role="note"><span><strong>当前浏览器</strong><small>本地保存，不会上传</small></span><span class="setting-end" id="lastSaved">尚未保存</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="主导航">
+    <button class="nav-btn active" data-nav="home"><i data-lucide="layout-dashboard"></i><span>概览</span></button>
+    <button class="nav-btn" data-nav="accounts"><i data-lucide="wallet-cards"></i><span>账户</span></button>
+    <button class="nav-btn" data-nav="records"><i data-lucide="list-checks"></i><span>流水</span></button>
+    <button class="nav-btn" data-nav="plans"><i data-lucide="calendar-clock"></i><span>计划</span></button>
+    <button class="nav-btn" data-nav="settings"><i data-lucide="settings-2"></i><span>设置</span></button>
+  </nav>
+
+  <div class="scrim" id="accountScrim" role="dialog" aria-modal="true" aria-labelledby="accountSheetTitle">
+    <section class="sheet">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head"><h2 id="accountSheetTitle">新增账户</h2><button class="close-btn" data-close-sheet aria-label="关闭">×</button></div>
+      <form id="accountForm">
+        <input type="hidden" id="accountId">
+        <div class="form-grid">
+          <div class="field"><label for="accountName">账户名称</label><input id="accountName" maxlength="30" required placeholder="例如：工资卡"></div>
+          <div class="field"><label for="accountType">账户类型</label><select id="accountType" required><option value="bank">银行卡</option><option value="deposit">存款</option><option value="investment">投资</option><option value="debt">欠款</option><option value="cash">现金</option></select></div>
+          <div class="field"><label for="accountBalance">当前余额</label><input id="accountBalance" type="number" inputmode="decimal" min="0" step="0.01" required placeholder="0.00"></div>
+          <div class="field"><label for="accountInstitution">机构（可选）</label><input id="accountInstitution" maxlength="30" placeholder="例如：招商银行"></div>
+          <div class="field"><label for="accountNote">备注（可选）</label><textarea id="accountNote" maxlength="120" placeholder="账户用途或其他备注"></textarea></div>
+        </div>
+        <div class="form-actions"><button type="button" class="secondary-btn" data-close-sheet>取消</button><button type="submit" class="primary-btn">保存账户</button></div>
+        <button type="button" class="delete-link" id="deleteAccountBtn" hidden>删除账户</button>
+      </form>
+    </section>
+  </div>
+
+  <div class="scrim" id="recordScrim" role="dialog" aria-modal="true" aria-labelledby="recordSheetTitle">
+    <section class="sheet">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head"><h2 id="recordSheetTitle">记录余额变化</h2><button class="close-btn" data-close-sheet aria-label="关闭">×</button></div>
+      <form id="recordForm">
+        <div class="form-grid">
+          <div class="field"><label for="recordAccount">账户</label><select id="recordAccount" required></select></div>
+          <div class="field"><label>变化方向</label><div class="segmented"><button type="button" class="segment active" data-direction="increase">增加</button><button type="button" class="segment" data-direction="decrease">减少</button></div></div>
+          <div class="field"><label for="recordAmount">变化金额</label><input id="recordAmount" type="number" inputmode="decimal" min="0.01" step="0.01" required placeholder="0.00"></div>
+          <div class="field"><label for="recordCategory">分类</label><select id="recordCategory"><option>余额调整</option><option>工资收入</option><option>日常支出</option><option>转账</option><option>存入</option><option>取出</option><option>投资盈亏</option><option>借入</option><option>还款</option><option>利息</option><option>其他</option></select></div>
+          <div class="field"><label for="recordDate">日期</label><input id="recordDate" type="date" required></div>
+          <div class="field"><label for="recordNote">备注（可选）</label><textarea id="recordNote" maxlength="120" placeholder="这笔变化的说明"></textarea></div>
+        </div>
+        <div class="form-actions"><button type="button" class="secondary-btn" data-close-sheet>取消</button><button type="submit" class="primary-btn">保存记录</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="scrim" id="salaryScrim" role="dialog" aria-modal="true" aria-labelledby="salarySheetTitle">
+    <section class="sheet">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head"><h2 id="salarySheetTitle">记录工资收入</h2><button class="close-btn" data-close-sheet aria-label="关闭">×</button></div>
+      <form id="salaryForm">
+        <div class="form-grid">
+          <div class="field"><label for="salaryAmount">工资金额</label><input id="salaryAmount" type="number" inputmode="decimal" min="0.01" step="0.01" required placeholder="0.00"></div>
+          <div class="field"><label for="salaryAccount">到账账户</label><select id="salaryAccount" required></select></div>
+          <div class="field"><label for="salaryDate">到账日期</label><input id="salaryDate" type="date" required></div>
+          <div class="field"><label for="salaryNote">备注（可选）</label><textarea id="salaryNote" maxlength="120" placeholder="例如：8 月工资"></textarea></div>
+        </div>
+        <div class="form-actions"><button type="button" class="secondary-btn" data-close-sheet>取消</button><button type="submit" class="primary-btn">保存工资</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="scrim" id="repaymentScrim" role="dialog" aria-modal="true" aria-labelledby="repaymentSheetTitle">
+    <section class="sheet">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head"><h2 id="repaymentSheetTitle">新增还款项目</h2><button class="close-btn" data-close-sheet aria-label="关闭">×</button></div>
+      <form id="repaymentForm">
+        <input type="hidden" id="repaymentId">
+        <div class="form-grid">
+          <div class="field"><label for="repaymentName">项目名称</label><input id="repaymentName" maxlength="30" required placeholder="例如：房贷、花呗、信用卡"></div>
+          <div class="field"><label for="repaymentAmount">每月金额</label><input id="repaymentAmount" type="number" inputmode="decimal" min="0.01" step="0.01" required placeholder="0.00"></div>
+          <div class="field"><label for="repaymentDay">每月还款日</label><input id="repaymentDay" type="number" min="1" max="31" inputmode="numeric" required placeholder="例如：15"></div>
+          <div class="field"><label for="repaymentAccount">扣款账户</label><select id="repaymentAccount" required></select></div>
+          <div class="field"><label for="repaymentNote">备注（可选）</label><textarea id="repaymentNote" maxlength="120" placeholder="例如：自动扣款"></textarea></div>
+        </div>
+        <div class="form-actions"><button type="button" class="secondary-btn" data-close-sheet>取消</button><button type="submit" class="primary-btn">保存项目</button></div>
+        <button type="button" class="delete-link" id="deleteRepaymentBtn" hidden>删除项目</button>
+      </form>
+    </section>
+  </div>
+
+  <input id="importFile" type="file" accept="application/json,.json">
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script>
+    (() => {
+      'use strict';
+      const STORAGE_KEY = 'my-finance-workbench-v1';
+      const TYPES = {
+        bank: { label: '银行卡', short: '卡' },
+        deposit: { label: '存款', short: '存' },
+        investment: { label: '投资', short: '投' },
+        debt: { label: '欠款', short: '欠' },
+        cash: { label: '现金', short: '现' }
+      };
+      let state = loadState();
+      let accountFilter = 'all';
+      let recordFilter = 'all';
+      let direction = 'increase';
+      let toastTimer;
+
+      function defaultState() {
+        return { version: 2, accounts: [], records: [], salaryRecords: [], repayments: [], repaymentPaid: {}, settings: { hideAmounts: false, paydayDay: 8, holidays: [], reminderEnabled: false, lastReminderDate: null }, savedAt: null };
+      }
+
+      function loadState() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          if (parsed && Array.isArray(parsed.accounts) && Array.isArray(parsed.records)) {
+            const defaults = defaultState();
+            parsed.salaryRecords = Array.isArray(parsed.salaryRecords) ? parsed.salaryRecords : [];
+            parsed.repayments = Array.isArray(parsed.repayments) ? parsed.repayments : [];
+            parsed.repaymentPaid = parsed.repaymentPaid || {};
+            parsed.settings = { ...defaults.settings, ...(parsed.settings || {}), holidays: Array.isArray(parsed.settings?.holidays) ? parsed.settings.holidays : [] };
+            return parsed;
+          }
+        } catch (_) {}
+        return defaultState();
+      }
+
+      function saveState(message) {
+        state.savedAt = new Date().toISOString();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        render();
+        if (message) showToast(message);
+      }
+
+      function uid() {
+        return (crypto.randomUUID && crypto.randomUUID()) || Date.now().toString(36) + Math.random().toString(36).slice(2);
+      }
+
+      function money(value, compact = false) {
+        const number = Number(value) || 0;
+        return new Intl.NumberFormat('zh-CN', {
+          style: 'currency', currency: 'CNY',
+          minimumFractionDigits: compact ? 0 : 2,
+          maximumFractionDigits: compact ? 0 : 2
+        }).format(number).replace('CN¥', '¥');
+      }
+
+      function esc(value) {
+        return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
+      }
+
+      function dateKey(date = new Date()) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+
+      function monthKey(date = new Date()) { return dateKey(date).slice(0, 7); }
+
+      function localDate(key) { return new Date(`${key}T12:00:00`); }
+
+      function isNonWorking(date) {
+        const key = dateKey(date);
+        return date.getDay() === 0 || date.getDay() === 6 || (state.settings.holidays || []).includes(key);
+      }
+
+      function adjustedPayday(year, monthIndex) {
+        const day = Math.min(Math.max(Number(state.settings.paydayDay) || 8, 1), 28);
+        const date = new Date(year, monthIndex, day, 12, 0, 0);
+        while (isNonWorking(date)) date.setDate(date.getDate() + 1);
+        return date;
+      }
+
+      function nextPayday(reference = new Date()) {
+        const current = adjustedPayday(reference.getFullYear(), reference.getMonth());
+        if (dateKey(current) >= dateKey(reference)) return current;
+        return adjustedPayday(reference.getFullYear(), reference.getMonth() + 1);
+      }
+
+      function daysUntil(target, reference = new Date()) {
+        const a = new Date(reference); a.setHours(0, 0, 0, 0);
+        const b = new Date(target); b.setHours(0, 0, 0, 0);
+        return Math.round((b - a) / 86400000);
+      }
+
+      function shortDate(key) {
+        return localDate(key).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+      }
+
+      function accountOptions(selected) {
+        return state.accounts.filter(a => a.type !== 'debt').map(a => `<option value="${a.id}" ${a.id === selected ? 'selected' : ''}>${esc(a.name)} · ${money(a.balance)}</option>`).join('');
+      }
+
+      function totals() {
+        const sum = type => state.accounts.filter(a => a.type === type).reduce((n, a) => n + Number(a.balance || 0), 0);
+        const debt = sum('debt');
+        const assets = state.accounts.filter(a => a.type !== 'debt').reduce((n, a) => n + Number(a.balance || 0), 0);
+        return { bank: sum('bank'), deposit: sum('deposit') + sum('cash'), investment: sum('investment'), debt, assets, net: assets - debt };
+      }
+
+      function accountMarkup(account, allowEdit = false) {
+        const info = TYPES[account.type] || TYPES.bank;
+        const subtitle = [info.label, account.institution].filter(Boolean).join(' · ');
+        return `<article class="account-item" ${allowEdit ? `data-edit-account="${account.id}"` : ''}>
+          <div class="account-icon ${esc(account.type)}">${info.short}</div>
+          <div class="account-info"><div class="account-name">${esc(account.name)}</div><div class="account-sub">${esc(subtitle || '未填写机构')}</div></div>
+          <div class="account-end"><div class="account-balance money">${money(account.balance)}</div><button class="quick-btn" data-quick-record="${account.id}">记一笔</button></div>
+        </article>`;
+      }
+
+      function emptyMarkup(type) {
+        if (type === 'account') return `<div class="empty"><div class="empty-symbol">＋</div><strong>还没有账户</strong><span>新增银行卡、存款、投资或欠款账户</span></div>`;
+        return `<div class="empty"><div class="empty-symbol">≡</div><strong>还没有流水</strong><span>余额变动后会保存在这里</span></div>`;
+      }
+
+      function render() {
+        const t = totals();
+        document.getElementById('netWorth').textContent = money(t.net);
+        document.getElementById('heroAssets').textContent = money(t.assets);
+        document.getElementById('heroDebt').textContent = money(t.debt);
+        document.getElementById('bankTotal').textContent = money(t.bank, true);
+        document.getElementById('depositTotal').textContent = money(t.deposit, true);
+        document.getElementById('investmentTotal').textContent = money(t.investment, true);
+        document.getElementById('debtTotal').textContent = money(t.debt, true);
+        document.getElementById('accountCount').textContent = state.accounts.length;
+        document.getElementById('accountAssets').textContent = money(t.assets, true);
+        document.getElementById('accountDebt').textContent = money(t.debt, true);
+
+        const month = dateKey().slice(0, 7);
+        const monthImpact = state.records.filter(r => r.date.startsWith(month)).reduce((n, r) => n + (r.accountType === 'debt' ? -r.delta : r.delta), 0);
+        document.getElementById('monthChange').textContent = `本月 ${monthImpact >= 0 ? '+' : ''}${money(monthImpact, true)}`;
+
+        const sortedAccounts = [...state.accounts].sort((a, b) => Number(b.balance) - Number(a.balance));
+        document.getElementById('homeAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.slice(0, 4).map(a => accountMarkup(a)).join('') : emptyMarkup('account');
+        const filtered = accountFilter === 'all' ? sortedAccounts : sortedAccounts.filter(a => a.type === accountFilter);
+        document.getElementById('allAccounts').innerHTML = filtered.length ? filtered.map(a => accountMarkup(a, true)).join('') : emptyMarkup('account');
+
+        document.getElementById('storageStats').textContent = `${state.accounts.length} 个账户 · ${state.records.length} 条流水`;
+        document.getElementById('privacyStatus').textContent = state.settings.hideAmounts ? '已开启' : '已关闭';
+        document.getElementById('lastSaved').textContent = state.savedAt ? new Date(state.savedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '尚未保存';
+        document.querySelectorAll('.money').forEach(el => el.classList.toggle('amount-hidden', !!state.settings.hideAmounts));
+        document.getElementById('privacyBtn').setAttribute('title', state.settings.hideAmounts ? '显示金额' : '隐藏金额');
+
+        renderRecords();
+        renderPlans();
+        renderChart();
+        refreshIcons();
+      }
+
+      function renderRecords() {
+        const query = document.getElementById('recordSearch').value.trim().toLowerCase();
+        const records = [...state.records].sort((a, b) => (b.date + b.createdAt).localeCompare(a.date + a.createdAt)).filter(r => {
+          const directionMatch = recordFilter === 'all' || (recordFilter === 'increase' ? r.delta > 0 : r.delta < 0);
+          const text = `${r.accountName} ${r.category} ${r.note || ''}`.toLowerCase();
+          return directionMatch && (!query || text.includes(query));
+        });
+        const container = document.getElementById('recordGroups');
+        if (!records.length) { container.innerHTML = emptyMarkup('record'); return; }
+        const groups = records.reduce((all, record) => {
+          (all[record.date] ||= []).push(record); return all;
+        }, {});
+        container.innerHTML = Object.entries(groups).map(([date, rows]) => {
+          const label = date === dateKey() ? '今天' : new Date(date + 'T12:00:00').toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
+          return `<div class="date-group">${label}</div><div class="record-list">${rows.map(r => {
+            const positive = r.delta >= 0;
+            return `<article class="record-item"><div class="record-sign ${positive ? '' : 'minus'}">${positive ? '+' : '−'}</div>
+              <div><div class="record-title">${esc(r.accountName)} · ${esc(r.category)}</div><div class="record-note">${esc(r.note || TYPES[r.accountType]?.label || '余额变动')}</div></div>
+              <div class="record-end"><div class="record-amount money">${positive ? '+' : '−'}${money(Math.abs(r.delta))}</div><div class="record-balance">余额 ${money(r.after)}</div></div></article>`;
+          }).join('')}</div>`;
+        }).join('');
+        if (state.settings.hideAmounts) container.querySelectorAll('.money').forEach(el => el.classList.add('amount-hidden'));
+      }
+
+      function renderPlans() {
+        const now = new Date();
+        const payday = nextPayday(now);
+        const days = daysUntil(payday, now);
+        const paydayAlert = document.getElementById('paydayAlert');
+        const paydayText = days === 0 ? '今天是发薪日' : `还有 ${days} 天发薪`;
+        const paydayNote = isNonWorking(new Date(now.getFullYear(), now.getMonth(), Number(state.settings.paydayDay) || 8, 12, 0, 0))
+          ? `原定每月 ${state.settings.paydayDay || 8} 号，遇到周末或节假日已顺延到 ${shortDate(dateKey(payday))}`
+          : `每月 ${state.settings.paydayDay || 8} 号到账，顺延规则已开启`;
+        paydayAlert.innerHTML = `<div class="plan-alert ${days === 0 ? 'overdue' : ''}">
+          <div class="plan-alert-title"><span>工资提醒</span><span>${shortDate(dateKey(payday))}</span></div>
+          <div class="plan-alert-main">${paydayText}</div>
+          <div class="plan-alert-note">${paydayNote}</div>
+          <div class="plan-actions"><button class="secondary-btn" data-enable-reminder>${state.settings.reminderEnabled ? '提醒已开启' : '开启浏览器提醒'}</button><button class="primary-btn" data-open-salary>记录工资</button></div>
+        </div>`;
+
+        const currentMonth = monthKey(now);
+        const currentSalary = state.salaryRecords.filter(r => r.date && r.date.startsWith(currentMonth)).sort((a, b) => b.date.localeCompare(a.date));
+        const salaryTotal = currentSalary.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+        document.getElementById('salaryMonthLabel').textContent = `${now.getFullYear()} 年 ${now.getMonth() + 1} 月 · ${currentSalary.length} 笔`;
+        document.getElementById('salaryMonthTotal').textContent = money(salaryTotal);
+        document.getElementById('salaryList').innerHTML = currentSalary.length ? currentSalary.map(r => `<div class="salary-row"><div class="salary-mark">薪</div><div><strong>${esc(r.accountName || '工资收入')}</strong><small>${shortDate(r.date)}${r.note ? ` · ${esc(r.note)}` : ''}</small></div><div class="money">+${money(r.amount)}</div></div>`).join('') : '<div class="plan-empty">本月还没有工资记录，点击“记录工资”添加。</div>';
+
+        const repayments = [...state.repayments].sort((a, b) => Number(a.dueDay) - Number(b.dueDay));
+        let paidCount = 0;
+        const repaymentHtml = repayments.map(item => {
+          const dueDay = Math.min(Math.max(Number(item.dueDay) || 1, 1), new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate());
+          const due = new Date(now.getFullYear(), now.getMonth(), dueDay, 12, 0, 0);
+          const key = `${item.id}:${currentMonth}`;
+          const paid = !!state.repaymentPaid[key];
+          if (paid) paidCount += 1;
+          const delta = daysUntil(due, now);
+          const dueClass = paid ? '' : (delta < 0 ? 'late' : (delta <= 3 ? 'soon' : ''));
+          const dueText = paid ? `已还 · ${shortDate(state.repaymentPaid[key].date || dateKey(now))}` : (delta < 0 ? `逾期 ${Math.abs(delta)} 天` : (delta === 0 ? '今天到期' : `还有 ${delta} 天`));
+          const account = state.accounts.find(a => a.id === item.accountId);
+          return `<article class="repayment-item"><button class="repayment-check ${paid ? 'paid' : ''}" data-toggle-repayment="${item.id}" aria-label="${paid ? '标记未还' : '标记已还'}">${paid ? '✓' : ''}</button><div class="repayment-info"><div class="repayment-name">${esc(item.name)}</div><div class="repayment-sub">每月 ${dueDay} 号 · ${esc(account?.name || '未指定账户')}${item.note ? ` · ${esc(item.note)}` : ''}</div></div><div class="repayment-end"><div class="repayment-amount money">${money(item.amount)}</div><div class="repayment-due ${dueClass}">${dueText}</div><button class="quick-btn" data-edit-repayment="${item.id}">编辑</button></div></article>`;
+        }).join('');
+        document.getElementById('repaymentSummary').textContent = repayments.length ? `${paidCount}/${repayments.length} 已完成` : '还没有项目';
+        document.getElementById('repaymentList').innerHTML = repaymentHtml || '<div class="plan-empty">添加房贷、信用卡、花呗等每月固定还款。</div>';
+
+        document.getElementById('paydayDay').value = state.settings.paydayDay || 8;
+        const holidays = [...(state.settings.holidays || [])].sort();
+        document.getElementById('holidayList').innerHTML = holidays.length ? holidays.map(day => `<span class="holiday-tag">${shortDate(day)}<button type="button" data-remove-holiday="${day}" aria-label="删除节假日">×</button></span>`).join('') : '<span class="salary-meta">暂未添加节假日</span>';
+        document.querySelectorAll('#salaryMonthTotal, #salaryList .money, #repaymentList .money').forEach(el => el.classList.toggle('amount-hidden', !!state.settings.hideAmounts));
+      }
+
+      function trendData() {
+        const current = totals().net;
+        const days = Array.from({ length: 7 }, (_, i) => {
+          const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - (6 - i)); return d;
+        });
+        const values = days.map(day => {
+          const key = dateKey(day);
+          const laterImpact = state.records.filter(r => r.date > key).reduce((n, r) => n + (r.accountType === 'debt' ? -r.delta : r.delta), 0);
+          return current - laterImpact;
+        });
+        return { days, values };
+      }
+
+      function renderChart() {
+        const { days, values } = trendData();
+        const canvas = document.getElementById('trendChart');
+        const rect = canvas.getBoundingClientRect();
+        if (!rect.width) return;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+        const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+        const w = rect.width, h = rect.height, pad = 8;
+        let min = Math.min(...values), max = Math.max(...values);
+        if (min === max) { min -= Math.max(Math.abs(min) * .05, 1); max += Math.max(Math.abs(max) * .05, 1); }
+        const points = values.map((v, i) => ({ x: pad + i * (w - pad * 2) / 6, y: pad + (max - v) / (max - min) * (h - pad * 2) }));
+        ctx.strokeStyle = '#e5eae6'; ctx.lineWidth = 1;
+        [0.25, 0.5, 0.75].forEach(r => { ctx.beginPath(); ctx.moveTo(0, h * r); ctx.lineTo(w, h * r); ctx.stroke(); });
+        ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y); points.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.strokeStyle = '#167a52'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
+        points.forEach((p, i) => { if (i === points.length - 1) { ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#167a52'; ctx.stroke(); } });
+        document.getElementById('chartLabels').innerHTML = days.map((d, i) => `<span>${i === 6 ? '今天' : `${d.getMonth() + 1}/${d.getDate()}`}</span>`).join('');
+        const delta = values[6] - values[0];
+        const deltaEl = document.getElementById('trendDelta');
+        deltaEl.textContent = `${delta >= 0 ? '+' : ''}${money(delta)}`;
+        deltaEl.style.color = delta < 0 ? 'var(--danger)' : 'var(--accent)';
+      }
+
+      function refreshIcons() {
+        if (window.lucide) window.lucide.createIcons({ attrs: { 'stroke-width': 1.8 } });
+      }
+
+      function navigate(view) {
+        document.querySelectorAll('.view').forEach(el => el.classList.toggle('active', el.id === `view-${view}`));
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.nav === view));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (view === 'home') requestAnimationFrame(renderChart);
+      }
+
+      function showSheet(id) {
+        document.getElementById(id).classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeSheets() {
+        document.querySelectorAll('.scrim').forEach(s => s.classList.remove('open'));
+        document.body.style.overflow = '';
+      }
+
+      function openAccount(account) {
+        const editing = !!account;
+        document.getElementById('accountSheetTitle').textContent = editing ? '编辑账户' : '新增账户';
+        document.getElementById('accountId').value = account?.id || '';
+        document.getElementById('accountName').value = account?.name || '';
+        document.getElementById('accountType').value = account?.type || 'bank';
+        document.getElementById('accountBalance').value = editing ? account.balance : '';
+        document.getElementById('accountInstitution').value = account?.institution || '';
+        document.getElementById('accountNote').value = account?.note || '';
+        document.getElementById('deleteAccountBtn').hidden = !editing;
+        showSheet('accountScrim');
+        setTimeout(() => document.getElementById('accountName').focus(), 220);
+      }
+
+      function openRecord(accountId) {
+        if (!state.accounts.length) { showToast('请先新增一个账户'); openAccount(); return; }
+        const select = document.getElementById('recordAccount');
+        select.innerHTML = state.accounts.map(a => `<option value="${a.id}">${esc(a.name)} · ${money(a.balance)}</option>`).join('');
+        select.value = accountId || state.accounts[0].id;
+        document.getElementById('recordAmount').value = '';
+        document.getElementById('recordCategory').value = '余额调整';
+        document.getElementById('recordDate').value = dateKey();
+        document.getElementById('recordNote').value = '';
+        setDirection('increase');
+        showSheet('recordScrim');
+      }
+
+      function openSalary() {
+        if (!state.accounts.filter(a => a.type !== 'debt').length) { showToast('请先新增一个到账账户'); openAccount(); return; }
+        document.getElementById('salaryAccount').innerHTML = accountOptions(state.accounts.find(a => a.type === 'bank')?.id || state.accounts.find(a => a.type !== 'debt')?.id);
+        document.getElementById('salaryAmount').value = '';
+        document.getElementById('salaryDate').value = dateKey();
+        document.getElementById('salaryNote').value = `${new Date().getMonth() + 1} 月工资`;
+        showSheet('salaryScrim');
+        setTimeout(() => document.getElementById('salaryAmount').focus(), 220);
+      }
+
+      function openRepayment(item) {
+        if (!state.accounts.filter(a => a.type !== 'debt').length) { showToast('请先新增一个扣款账户'); openAccount(); return; }
+        const editing = !!item;
+        document.getElementById('repaymentSheetTitle').textContent = editing ? '编辑还款项目' : '新增还款项目';
+        document.getElementById('repaymentId').value = item?.id || '';
+        document.getElementById('repaymentName').value = item?.name || '';
+        document.getElementById('repaymentAmount').value = item?.amount || '';
+        document.getElementById('repaymentDay').value = item?.dueDay || '';
+        document.getElementById('repaymentAccount').innerHTML = accountOptions(item?.accountId);
+        document.getElementById('repaymentNote').value = item?.note || '';
+        document.getElementById('deleteRepaymentBtn').hidden = !editing;
+        showSheet('repaymentScrim');
+        setTimeout(() => document.getElementById('repaymentName').focus(), 220);
+      }
+
+      function toggleRepayment(id) {
+        const item = state.repayments.find(r => r.id === id);
+        if (!item) return;
+        const key = `${id}:${monthKey()}`;
+        const existing = state.repaymentPaid[key];
+        if (existing) {
+          const account = state.accounts.find(a => a.id === item.accountId);
+          if (account && existing.recordId) {
+            const record = state.records.find(r => r.id === existing.recordId);
+            if (record) account.balance = Math.round((Number(account.balance) + Math.abs(Number(record.delta))) * 100) / 100;
+            state.records = state.records.filter(r => r.id !== existing.recordId);
+          }
+          delete state.repaymentPaid[key];
+          saveState('已撤销本月还款');
+          return;
+        }
+        const account = state.accounts.find(a => a.id === item.accountId);
+        if (!account) { showToast('请先为该项目选择扣款账户'); openRepayment(item); return; }
+        const amount = Number(item.amount);
+        if (Number(account.balance) < amount) { showToast('扣款账户余额不足'); return; }
+        const before = Number(account.balance);
+        account.balance = Math.round((before - amount) * 100) / 100;
+        const record = { id: uid(), accountId: account.id, accountName: account.name, accountType: account.type, delta: -amount, before, after: account.balance, category: '还款', note: item.name, date: dateKey(), createdAt: new Date().toISOString() };
+        state.records.push(record);
+        state.repaymentPaid[key] = { date: dateKey(), recordId: record.id };
+        saveState('本月还款已完成');
+      }
+
+      function checkPaydayReminder() {
+        if (!state.settings.reminderEnabled || !('Notification' in window) || Notification.permission !== 'granted') return;
+        const now = new Date();
+        const payday = adjustedPayday(now.getFullYear(), now.getMonth());
+        const today = dateKey(now);
+        if (dateKey(payday) === today && state.settings.lastReminderDate !== today) {
+          new Notification('我的账本 · 工资提醒', { body: '今天是发薪日，记得记录工资收入。' });
+          state.settings.lastReminderDate = today;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+      }
+
+      async function enableReminder() {
+        if (!('Notification' in window)) { showToast('当前浏览器不支持通知'); return; }
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          state.settings.reminderEnabled = true;
+          saveState('浏览器提醒已开启');
+          checkPaydayReminder();
+        } else showToast('未获得通知权限');
+      }
+
+      function setDirection(value) {
+        direction = value;
+        document.querySelectorAll('[data-direction]').forEach(btn => btn.classList.toggle('active', btn.dataset.direction === value));
+      }
+
+      function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message; toast.classList.add('show');
+        clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+      }
+
+      function togglePrivacy() {
+        state.settings.hideAmounts = !state.settings.hideAmounts;
+        saveState(state.settings.hideAmounts ? '金额已隐藏' : '金额已显示');
+      }
+
+      document.addEventListener('click', event => {
+        const nav = event.target.closest('[data-nav]'); if (nav) navigate(nav.dataset.nav);
+        const addAccount = event.target.closest('[data-open-account]'); if (addAccount) openAccount();
+        const addRecord = event.target.closest('[data-open-record]'); if (addRecord) openRecord();
+        const addSalary = event.target.closest('[data-open-salary]'); if (addSalary) openSalary();
+        const addRepayment = event.target.closest('[data-open-repayment]'); if (addRepayment) openRepayment();
+        const toggle = event.target.closest('[data-toggle-repayment]'); if (toggle) { event.stopPropagation(); toggleRepayment(toggle.dataset.toggleRepayment); }
+        const editRepayment = event.target.closest('[data-edit-repayment]'); if (editRepayment) { event.stopPropagation(); openRepayment(state.repayments.find(r => r.id === editRepayment.dataset.editRepayment)); }
+        const reminder = event.target.closest('[data-enable-reminder]'); if (reminder) enableReminder();
+        const removeHoliday = event.target.closest('[data-remove-holiday]'); if (removeHoliday) { state.settings.holidays = (state.settings.holidays || []).filter(day => day !== removeHoliday.dataset.removeHoliday); saveState('节假日已移除'); }
+        const quick = event.target.closest('[data-quick-record]'); if (quick) { event.stopPropagation(); openRecord(quick.dataset.quickRecord); }
+        const edit = event.target.closest('[data-edit-account]'); if (edit && !event.target.closest('[data-quick-record]')) openAccount(state.accounts.find(a => a.id === edit.dataset.editAccount));
+        const close = event.target.closest('[data-close-sheet]'); if (close) closeSheets();
+        const accountChip = event.target.closest('[data-account-filter]'); if (accountChip) { accountFilter = accountChip.dataset.accountFilter; document.querySelectorAll('[data-account-filter]').forEach(c => c.classList.toggle('active', c === accountChip)); render(); }
+        const recordChip = event.target.closest('[data-record-filter]'); if (recordChip) { recordFilter = recordChip.dataset.recordFilter; document.querySelectorAll('[data-record-filter]').forEach(c => c.classList.toggle('active', c === recordChip)); renderRecords(); }
+        const segment = event.target.closest('[data-direction]'); if (segment) setDirection(segment.dataset.direction);
+      });
+
+      document.querySelectorAll('.scrim').forEach(scrim => scrim.addEventListener('click', event => { if (event.target === scrim) closeSheets(); }));
+      document.getElementById('recordSearch').addEventListener('input', renderRecords);
+      document.getElementById('privacyBtn').addEventListener('click', togglePrivacy);
+      document.getElementById('settingsPrivacyBtn').addEventListener('click', togglePrivacy);
+      document.getElementById('paydayDay').addEventListener('change', event => {
+        const value = Math.min(Math.max(Number(event.target.value) || 8, 1), 28);
+        state.settings.paydayDay = value; event.target.value = value; saveState('发薪日已更新');
+      });
+      document.getElementById('addHolidayBtn').addEventListener('click', () => {
+        const value = document.getElementById('holidayDate').value;
+        if (!value) { showToast('请选择节假日日期'); return; }
+        state.settings.holidays = Array.from(new Set([...(state.settings.holidays || []), value])).sort();
+        document.getElementById('holidayDate').value = '';
+        saveState('节假日已添加');
+      });
+      window.addEventListener('resize', () => requestAnimationFrame(renderChart));
+
+      document.getElementById('salaryForm').addEventListener('submit', event => {
+        event.preventDefault();
+        const account = state.accounts.find(a => a.id === document.getElementById('salaryAccount').value);
+        const amount = Number(document.getElementById('salaryAmount').value);
+        const date = document.getElementById('salaryDate').value;
+        if (!account || !Number.isFinite(amount) || amount <= 0 || !date) { showToast('请填写工资金额、账户和日期'); return; }
+        const before = Number(account.balance);
+        account.balance = Math.round((before + amount) * 100) / 100;
+        const record = { id: uid(), accountId: account.id, accountName: account.name, accountType: account.type, delta: amount, before, after: account.balance, category: '工资收入', note: document.getElementById('salaryNote').value.trim() || '工资收入', date, createdAt: new Date().toISOString() };
+        state.records.push(record);
+        state.salaryRecords.push({ id: uid(), recordId: record.id, accountId: account.id, accountName: account.name, amount, date, note: document.getElementById('salaryNote').value.trim() });
+        closeSheets(); saveState('工资收入已记录');
+      });
+
+      document.getElementById('repaymentForm').addEventListener('submit', event => {
+        event.preventDefault();
+        const id = document.getElementById('repaymentId').value;
+        const amount = Number(document.getElementById('repaymentAmount').value);
+        const dueDay = Number(document.getElementById('repaymentDay').value);
+        const name = document.getElementById('repaymentName').value.trim();
+        if (!name || !Number.isFinite(amount) || amount <= 0 || !Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31) { showToast('请填写有效的还款项目'); return; }
+        const payload = { id: id || uid(), name, amount, dueDay, accountId: document.getElementById('repaymentAccount').value, note: document.getElementById('repaymentNote').value.trim(), updatedAt: new Date().toISOString() };
+        if (id) state.repayments = state.repayments.map(item => item.id === id ? payload : item);
+        else state.repayments.push(payload);
+        closeSheets(); saveState(id ? '还款项目已更新' : '还款项目已添加');
+      });
+
+      document.getElementById('deleteRepaymentBtn').addEventListener('click', () => {
+        const id = document.getElementById('repaymentId').value;
+        const item = state.repayments.find(r => r.id === id);
+        if (item && confirm(`删除“${item.name}”？历史还款流水会保留。`)) {
+          state.repayments = state.repayments.filter(r => r.id !== id);
+          closeSheets(); saveState('还款项目已删除');
+        }
+      });
+
+      document.getElementById('accountForm').addEventListener('submit', event => {
+        event.preventDefault();
+        const id = document.getElementById('accountId').value;
+        const balance = Number(document.getElementById('accountBalance').value);
+        if (!Number.isFinite(balance) || balance < 0) { showToast('请输入有效余额'); return; }
+        const payload = {
+          id: id || uid(), name: document.getElementById('accountName').value.trim(),
+          type: document.getElementById('accountType').value, balance,
+          institution: document.getElementById('accountInstitution').value.trim(),
+          note: document.getElementById('accountNote').value.trim(), updatedAt: new Date().toISOString()
+        };
+        if (!payload.name) { showToast('请输入账户名称'); return; }
+        if (id) {
+          const old = state.accounts.find(a => a.id === id);
+          if (old && Number(old.balance) !== balance) {
+            state.records.push({ id: uid(), accountId: id, accountName: payload.name, accountType: payload.type, delta: balance - Number(old.balance), before: Number(old.balance), after: balance, category: '余额校准', note: '编辑账户余额', date: dateKey(), createdAt: new Date().toISOString() });
+          }
+          state.accounts = state.accounts.map(a => a.id === id ? payload : a);
+        } else {
+          payload.createdAt = new Date().toISOString(); state.accounts.push(payload);
+          if (balance !== 0) state.records.push({ id: uid(), accountId: payload.id, accountName: payload.name, accountType: payload.type, delta: balance, before: 0, after: balance, category: '初始余额', note: '创建账户', date: dateKey(), createdAt: new Date().toISOString() });
+        }
+        closeSheets(); saveState(id ? '账户已更新' : '账户已新增');
+      });
+
+      document.getElementById('recordForm').addEventListener('submit', event => {
+        event.preventDefault();
+        const account = state.accounts.find(a => a.id === document.getElementById('recordAccount').value);
+        const raw = Number(document.getElementById('recordAmount').value);
+        if (!account || !Number.isFinite(raw) || raw <= 0) { showToast('请输入有效金额'); return; }
+        const delta = direction === 'increase' ? raw : -raw;
+        const before = Number(account.balance);
+        const after = before + delta;
+        if (after < 0) { showToast('余额不能小于 0'); return; }
+        account.balance = Math.round(after * 100) / 100; account.updatedAt = new Date().toISOString();
+        state.records.push({ id: uid(), accountId: account.id, accountName: account.name, accountType: account.type, delta, before, after: account.balance, category: document.getElementById('recordCategory').value, note: document.getElementById('recordNote').value.trim(), date: document.getElementById('recordDate').value, createdAt: new Date().toISOString() });
+        closeSheets(); saveState('记录已保存');
+      });
+
+      document.getElementById('deleteAccountBtn').addEventListener('click', () => {
+        const id = document.getElementById('accountId').value;
+        const account = state.accounts.find(a => a.id === id);
+        if (account && confirm(`删除“${account.name}”？历史流水会保留。`)) {
+          state.accounts = state.accounts.filter(a => a.id !== id); closeSheets(); saveState('账户已删除，历史流水已保留');
+        }
+      });
+
+      document.getElementById('exportBtn').addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob); const a = document.createElement('a');
+        a.href = url; a.download = `我的账本备份-${dateKey()}.json`; a.click(); URL.revokeObjectURL(url); showToast('备份已导出');
+      });
+      document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+      document.getElementById('importFile').addEventListener('change', async event => {
+        const file = event.target.files[0]; if (!file) return;
+        try {
+          const imported = JSON.parse(await file.text());
+          if (!Array.isArray(imported.accounts) || !Array.isArray(imported.records)) throw new Error('invalid');
+          if (!confirm(`恢复 ${imported.accounts.length} 个账户和 ${imported.records.length} 条流水？当前数据将被覆盖。`)) return;
+          state = { ...defaultState(), ...imported, settings: { ...defaultState().settings, ...(imported.settings || {}) } };
+          saveState('备份已恢复');
+        } catch (_) { showToast('无法读取此备份文件'); }
+        event.target.value = '';
+      });
+      document.getElementById('clearBtn').addEventListener('click', () => {
+        if (!state.accounts.length && !state.records.length) { showToast('当前没有数据'); return; }
+        if (confirm('确定清空全部账户和流水吗？此操作无法撤销。')) { state = defaultState(); localStorage.removeItem(STORAGE_KEY); render(); showToast('全部数据已清空'); }
+      });
+
+      document.getElementById('todayText').textContent = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
+      document.getElementById('recordDate').value = dateKey();
+      render();
+      checkPaydayReminder();
+      setInterval(checkPaydayReminder, 60000);
+    })();
+  </script>
+</body>
+</html>
