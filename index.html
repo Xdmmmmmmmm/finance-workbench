@@ -71,8 +71,11 @@
     .section-title { font-size: 15px; font-weight: 750; margin: 0; }
     .text-btn { border: 0; background: transparent; color: var(--accent); font-size: 13px; font-weight: 650; padding: 6px 0; cursor: pointer; }
 
-    .overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+    .overview-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
     .metric { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; min-height: 90px; }
+    .metric.clickable { cursor: pointer; transition: border-color .15s, transform .15s, box-shadow .15s; }
+    .metric.clickable:active { transform: scale(.985); }
+    .metric.clickable:focus-visible { outline: 3px solid var(--accent-soft); border-color: var(--accent); }
     .metric-top { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 12px; }
     .metric-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
     .metric-value { margin-top: 14px; font-weight: 750; font-size: 19px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -106,6 +109,7 @@
     .empty span { display: block; font-size: 12px; margin-top: 5px; }
 
     .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .page-head-left { display: flex; align-items: center; gap: 10px; }
     .page-head h1 { margin: 0; font-size: 24px; letter-spacing: 0; }
     .primary-btn, .secondary-btn, .danger-btn { min-height: 42px; border-radius: 8px; padding: 0 14px; border: 0; font-weight: 700; font-size: 13px; cursor: pointer; }
     .primary-btn { background: var(--accent); color: white; }
@@ -113,7 +117,6 @@
     .danger-btn { background: var(--danger-soft); color: var(--danger); }
 
     .summary-strip { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; }
-    .home-plan-summary { grid-template-columns: repeat(2, 1fr); margin-bottom: 0; }
     .summary-cell { padding: 13px 10px; min-width: 0; }
     .summary-cell + .summary-cell { border-left: 1px solid var(--line); }
     .summary-cell span { display: block; color: var(--muted); font-size: 10px; }
@@ -139,36 +142,6 @@
     .record-balance { margin-top: 3px; color: var(--muted); font-size: 10px; }
 
     .settings-group { margin-bottom: 18px; }
-    .plan-alert { background: var(--text); color: white; border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
-    .plan-alert.overdue { background: #7c322e; }
-    .plan-alert-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; font-weight: 750; }
-    .plan-alert-title span:last-child { color: rgba(255,255,255,.7); font-size: 11px; font-weight: 500; white-space: nowrap; }
-    .plan-alert-main { margin-top: 9px; font-size: 22px; font-weight: 780; font-variant-numeric: tabular-nums; }
-    .plan-alert-note { margin-top: 5px; color: rgba(255,255,255,.68); font-size: 11px; line-height: 1.5; }
-    .plan-actions { display: flex; gap: 8px; margin-top: 12px; }
-    .plan-actions .secondary-btn { background: rgba(255,255,255,.12); color: white; border-color: rgba(255,255,255,.18); min-height: 34px; font-size: 11px; }
-    .plan-actions .primary-btn { background: white; color: var(--text); min-height: 34px; font-size: 11px; }
-    .plan-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
-    .plan-card + .plan-card { margin-top: 12px; }
-    .plan-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 11px; }
-    .plan-card-head h2 { margin: 0; font-size: 15px; }
-    .plan-card-head span { color: var(--muted); font-size: 11px; }
-    .repayment-list { display: grid; gap: 8px; }
-    .repayment-item { display: grid; grid-template-columns: 28px minmax(0,1fr) auto; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
-    .repayment-check { width: 24px; height: 24px; border: 1px solid #c8d1ca; border-radius: 50%; background: white; color: white; display: grid; place-items: center; cursor: pointer; }
-    .repayment-check.paid { background: var(--accent); border-color: var(--accent); }
-    .repayment-info { min-width: 0; }
-    .repayment-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .repayment-sub { margin-top: 3px; color: var(--muted); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .repayment-end { text-align: right; }
-    .repayment-amount { font-size: 13px; font-weight: 750; font-variant-numeric: tabular-nums; }
-    .repayment-due { margin-top: 3px; color: var(--muted); font-size: 10px; }
-    .repayment-due.soon { color: var(--warning); }
-    .repayment-due.late { color: var(--danger); font-weight: 700; }
-    .plan-empty { padding: 14px 0 3px; color: var(--muted); font-size: 12px; text-align: center; }
-    .holiday-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .holiday-tag { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 10px; }
-    .holiday-tag button { border: 0; background: transparent; color: var(--muted); padding: 0; font-size: 14px; line-height: 1; cursor: pointer; }
     .settings-label { color: var(--muted); font-size: 11px; font-weight: 700; margin: 0 2px 7px; }
     .settings-list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
     .setting-row { width: 100%; min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 14px; border: 0; background: var(--surface); color: var(--text); text-align: left; cursor: pointer; }
@@ -177,7 +150,7 @@
     .setting-row small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 400; }
     .setting-end { color: var(--muted); font-size: 12px; }
 
-    .bottom-nav { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; padding: 7px 12px calc(7px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.96); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, 1fr); backdrop-filter: blur(14px); }
+    .bottom-nav { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; padding: 7px 12px calc(7px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.96); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(3, 1fr); backdrop-filter: blur(14px); }
     .nav-btn { border: 0; background: transparent; color: #7d8881; height: 50px; display: grid; place-items: center; align-content: center; gap: 3px; font-size: 10px; cursor: pointer; }
     .nav-btn svg { width: 20px; height: 20px; }
     .nav-btn.active { color: var(--accent); font-weight: 750; }
@@ -211,7 +184,7 @@
     @media (min-width: 800px) {
       .app { padding-left: 104px; padding-bottom: 38px; max-width: 980px; }
       .bottom-nav { left: calc(50% - 480px); right: auto; top: 90px; bottom: auto; width: 76px; grid-template-columns: 1fr; gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; }
-      .overview-grid { grid-template-columns: repeat(4, 1fr); }
+      .overview-grid { grid-template-columns: repeat(3, 1fr); }
       .sheet { width: 520px; left: 50%; right: auto; transform: translateX(-50%); bottom: 24px; border-radius: 12px; }
     }
   </style>
@@ -241,10 +214,9 @@
       </div>
 
       <div class="overview-grid">
-        <div class="metric"><div class="metric-top"><span>银行卡</span><i class="metric-dot"></i></div><div class="metric-value money" id="bankTotal">¥0</div></div>
-        <div class="metric cash"><div class="metric-top"><span>存款与现金</span><i class="metric-dot"></i></div><div class="metric-value money" id="depositTotal">¥0</div></div>
-        <div class="metric invest"><div class="metric-top"><span>投资</span><i class="metric-dot"></i></div><div class="metric-value money" id="investmentTotal">¥0</div></div>
-        <div class="metric debt"><div class="metric-top"><span>待还欠款</span><i class="metric-dot"></i></div><div class="metric-value money" id="debtTotal">¥0</div></div>
+        <div class="metric clickable" role="button" tabindex="0" data-account-filter-target="bank"><div class="metric-top"><span>银行卡</span><i class="metric-dot"></i></div><div class="metric-value money" id="bankTotal">¥0</div></div>
+        <div class="metric invest clickable" role="button" tabindex="0" data-account-filter-target="investment"><div class="metric-top"><span>投资</span><i class="metric-dot"></i></div><div class="metric-value money" id="investmentTotal">¥0</div></div>
+        <div class="metric debt clickable" role="button" tabindex="0" data-account-filter-target="debt"><div class="metric-top"><span>待还欠款</span><i class="metric-dot"></i></div><div class="metric-value money" id="debtTotal">¥0</div></div>
       </div>
 
       <section class="section">
@@ -260,17 +232,10 @@
         <div class="section-head"><h2 class="section-title">我的账户</h2><button class="text-btn" data-nav="accounts">管理账户</button></div>
         <div class="account-list" id="homeAccounts"></div>
       </section>
-      <section class="section">
-        <div class="section-head"><h2 class="section-title">还款清单</h2><button class="text-btn" data-nav="plans">查看清单</button></div>
-        <div class="summary-strip home-plan-summary">
-          <div class="summary-cell"><span>待还项目</span><strong id="homeRepaymentPending">0 项</strong></div>
-          <div class="summary-cell"><span>本月还款</span><strong class="money" id="homeRepaymentTotal">¥0</strong></div>
-        </div>
-      </section>
     </section>
 
     <section class="view" id="view-accounts">
-      <div class="page-head"><h1>账户</h1><button class="primary-btn" data-open-account>+ 新增</button></div>
+      <div class="page-head"><div class="page-head-left"><button class="text-btn" data-nav="home">← 概览</button><h1>账户</h1></div><button class="primary-btn" data-open-account>+ 新增</button></div>
       <div class="summary-strip">
         <div class="summary-cell"><span>账户数</span><strong id="accountCount">0</strong></div>
         <div class="summary-cell"><span>资产</span><strong class="money" id="accountAssets">¥0</strong></div>
@@ -296,14 +261,6 @@
         <button class="chip" data-record-filter="decrease">减少</button>
       </div>
       <div id="recordGroups"></div>
-    </section>
-
-    <section class="view" id="view-plans">
-      <div class="page-head"><h1>清单</h1><button class="primary-btn" data-open-repayment>+ 还款</button></div>
-      <div class="plan-card">
-        <div class="plan-card-head"><div><h2>本月还款清单</h2><span id="repaymentSummary"></span></div><button class="text-btn" data-open-repayment>管理</button></div>
-        <div class="repayment-list" id="repaymentList"></div>
-      </div>
     </section>
 
     <section class="view" id="view-settings">
@@ -333,7 +290,6 @@
 
   <nav class="bottom-nav" aria-label="主导航">
     <button class="nav-btn active" data-nav="home"><i data-lucide="layout-dashboard"></i><span>概览</span></button>
-    <button class="nav-btn" data-nav="accounts"><i data-lucide="wallet-cards"></i><span>账户</span></button>
     <button class="nav-btn" data-nav="records"><i data-lucide="list-checks"></i><span>流水</span></button>
     <button class="nav-btn" data-nav="settings"><i data-lucide="settings-2"></i><span>设置</span></button>
   </nav>
@@ -345,7 +301,7 @@
       <form id="accountForm">
         <input type="hidden" id="accountId">
         <div class="form-grid">
-          <div class="field"><label for="accountName">账户名称</label><input id="accountName" maxlength="30" required placeholder="例如：工资卡"></div>
+          <div class="field"><label for="accountName">账户名称</label><input id="accountName" maxlength="30" required placeholder="例如：日常银行卡"></div>
           <div class="field"><label for="accountType">账户类型</label><select id="accountType" required><option value="bank">银行卡</option><option value="deposit">存款</option><option value="investment">投资</option><option value="debt">欠款</option><option value="cash">现金</option></select></div>
           <div class="field"><label for="accountBalance">当前余额</label><input id="accountBalance" type="number" inputmode="decimal" min="0" step="0.01" required placeholder="0.00"></div>
           <div class="field"><label for="accountInstitution">机构（可选）</label><input id="accountInstitution" maxlength="30" placeholder="例如：招商银行"></div>
@@ -366,30 +322,11 @@
           <div class="field"><label for="recordAccount">账户</label><select id="recordAccount" required></select></div>
           <div class="field"><label>变化方向</label><div class="segmented"><button type="button" class="segment active" data-direction="increase">增加</button><button type="button" class="segment" data-direction="decrease">减少</button></div></div>
           <div class="field"><label for="recordAmount">变化金额</label><input id="recordAmount" type="number" inputmode="decimal" min="0.01" step="0.01" required placeholder="0.00"></div>
-          <div class="field"><label for="recordCategory">分类</label><select id="recordCategory"><option>余额调整</option><option>工资收入</option><option>日常支出</option><option>转账</option><option>存入</option><option>取出</option><option>投资盈亏</option><option>借入</option><option>还款</option><option>利息</option><option>其他</option></select></div>
+          <div class="field"><label for="recordCategory">分类</label><select id="recordCategory"><option>余额调整</option><option>日常支出</option><option>转账</option><option>存入</option><option>取出</option><option>投资盈亏</option><option>借入</option><option>还款</option><option>利息</option><option>其他</option></select></div>
           <div class="field"><label for="recordDate">日期</label><input id="recordDate" type="date" required></div>
           <div class="field"><label for="recordNote">备注（可选）</label><textarea id="recordNote" maxlength="120" placeholder="这笔变化的说明"></textarea></div>
         </div>
         <div class="form-actions"><button type="button" class="secondary-btn" data-close-sheet>取消</button><button type="submit" class="primary-btn">保存记录</button></div>
-      </form>
-    </section>
-  </div>
-
-  <div class="scrim" id="repaymentScrim" role="dialog" aria-modal="true" aria-labelledby="repaymentSheetTitle">
-    <section class="sheet">
-      <div class="sheet-grip"></div>
-      <div class="sheet-head"><h2 id="repaymentSheetTitle">新增还款项目</h2><button class="close-btn" data-close-sheet aria-label="关闭">×</button></div>
-      <form id="repaymentForm">
-        <input type="hidden" id="repaymentId">
-        <div class="form-grid">
-          <div class="field"><label for="repaymentName">项目名称</label><input id="repaymentName" maxlength="30" required placeholder="例如：房贷、花呗、信用卡"></div>
-          <div class="field"><label for="repaymentAmount">每月金额</label><input id="repaymentAmount" type="number" inputmode="decimal" min="0.01" step="0.01" required placeholder="0.00"></div>
-          <div class="field"><label for="repaymentDay">每月还款日</label><input id="repaymentDay" type="number" min="1" max="31" inputmode="numeric" required placeholder="例如：15"></div>
-          <div class="field"><label for="repaymentAccount">扣款账户</label><select id="repaymentAccount" required></select></div>
-          <div class="field"><label for="repaymentNote">备注（可选）</label><textarea id="repaymentNote" maxlength="120" placeholder="例如：自动扣款"></textarea></div>
-        </div>
-        <div class="form-actions"><button type="button" class="secondary-btn" data-close-sheet>取消</button><button type="submit" class="primary-btn">保存项目</button></div>
-        <button type="button" class="delete-link" id="deleteRepaymentBtn" hidden>删除项目</button>
       </form>
     </section>
   </div>
@@ -465,24 +402,6 @@
         return `${y}-${m}-${d}`;
       }
 
-      function monthKey(date = new Date()) { return dateKey(date).slice(0, 7); }
-
-      function localDate(key) { return new Date(`${key}T12:00:00`); }
-
-      function daysUntil(target, reference = new Date()) {
-        const a = new Date(reference); a.setHours(0, 0, 0, 0);
-        const b = new Date(target); b.setHours(0, 0, 0, 0);
-        return Math.round((b - a) / 86400000);
-      }
-
-      function shortDate(key) {
-        return localDate(key).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
-      }
-
-      function accountOptions(selected) {
-        return state.accounts.filter(a => a.type !== 'debt').map(a => `<option value="${a.id}" ${a.id === selected ? 'selected' : ''}>${esc(a.name)} · ${money(a.balance)}</option>`).join('');
-      }
-
       function totals() {
         const sum = type => state.accounts.filter(a => a.type === type).reduce((n, a) => n + Number(a.balance || 0), 0);
         const debt = sum('debt');
@@ -511,7 +430,6 @@
         document.getElementById('heroAssets').textContent = money(t.assets);
         document.getElementById('heroDebt').textContent = money(t.debt);
         document.getElementById('bankTotal').textContent = money(t.bank, true);
-        document.getElementById('depositTotal').textContent = money(t.deposit, true);
         document.getElementById('investmentTotal').textContent = money(t.investment, true);
         document.getElementById('debtTotal').textContent = money(t.debt, true);
         document.getElementById('accountCount').textContent = state.accounts.length;
@@ -527,12 +445,6 @@
         const filtered = accountFilter === 'all' ? sortedAccounts : sortedAccounts.filter(a => a.type === accountFilter);
         document.getElementById('allAccounts').innerHTML = filtered.length ? filtered.map(a => accountMarkup(a, true)).join('') : emptyMarkup('account');
 
-        const currentMonth = monthKey();
-        const paidRepayments = state.repayments.filter(item => state.repaymentPaid[`${item.id}:${currentMonth}`]);
-        const homeRepaymentTotal = paidRepayments.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-        document.getElementById('homeRepaymentPending').textContent = `${state.repayments.length - paidRepayments.length} 项`;
-        document.getElementById('homeRepaymentTotal').textContent = money(homeRepaymentTotal, true);
-
         document.getElementById('storageStats').textContent = `${state.accounts.length} 个账户 · ${state.records.length} 条流水`;
         document.getElementById('privacyStatus').textContent = state.settings.hideAmounts ? '已开启' : '已关闭';
         document.getElementById('lastSaved').textContent = state.savedAt ? new Date(state.savedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '尚未保存';
@@ -540,7 +452,6 @@
         document.getElementById('privacyBtn').setAttribute('title', state.settings.hideAmounts ? '显示金额' : '隐藏金额');
 
         renderRecords();
-        renderPlans();
         renderChart();
         refreshIcons();
       }
@@ -567,28 +478,6 @@
           }).join('')}</div>`;
         }).join('');
         if (state.settings.hideAmounts) container.querySelectorAll('.money').forEach(el => el.classList.add('amount-hidden'));
-      }
-
-      function renderPlans() {
-        const now = new Date();
-        const currentMonth = monthKey(now);
-        const repayments = [...state.repayments].sort((a, b) => Number(a.dueDay) - Number(b.dueDay));
-        let paidCount = 0;
-        const repaymentHtml = repayments.map(item => {
-          const dueDay = Math.min(Math.max(Number(item.dueDay) || 1, 1), new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate());
-          const due = new Date(now.getFullYear(), now.getMonth(), dueDay, 12, 0, 0);
-          const key = `${item.id}:${currentMonth}`;
-          const paid = !!state.repaymentPaid[key];
-          if (paid) paidCount += 1;
-          const delta = daysUntil(due, now);
-          const dueClass = paid ? '' : (delta < 0 ? 'late' : (delta <= 3 ? 'soon' : ''));
-          const dueText = paid ? `已还 · ${shortDate(state.repaymentPaid[key].date || dateKey(now))}` : (delta < 0 ? `逾期 ${Math.abs(delta)} 天` : (delta === 0 ? '今天到期' : `还有 ${delta} 天`));
-          const account = state.accounts.find(a => a.id === item.accountId);
-          return `<article class="repayment-item"><button class="repayment-check ${paid ? 'paid' : ''}" data-toggle-repayment="${item.id}" aria-label="${paid ? '标记未还' : '标记已还'}">${paid ? '✓' : ''}</button><div class="repayment-info"><div class="repayment-name">${esc(item.name)}</div><div class="repayment-sub">每月 ${dueDay} 号 · ${esc(account?.name || '未指定账户')}${item.note ? ` · ${esc(item.note)}` : ''}</div></div><div class="repayment-end"><div class="repayment-amount money">${money(item.amount)}</div><div class="repayment-due ${dueClass}">${dueText}</div><button class="quick-btn" data-edit-repayment="${item.id}">编辑</button></div></article>`;
-        }).join('');
-        document.getElementById('repaymentSummary').textContent = repayments.length ? `${paidCount}/${repayments.length} 已完成` : '还没有项目';
-        document.getElementById('repaymentList').innerHTML = repaymentHtml || '<div class="plan-empty">添加房贷、信用卡、花呗等每月固定还款。</div>';
-        document.querySelectorAll('#repaymentList .money').forEach(el => el.classList.toggle('amount-hidden', !!state.settings.hideAmounts));
       }
 
       function trendData() {
@@ -676,49 +565,6 @@
         showSheet('recordScrim');
       }
 
-      function openRepayment(item) {
-        if (!state.accounts.filter(a => a.type !== 'debt').length) { showToast('请先新增一个扣款账户'); openAccount(); return; }
-        const editing = !!item;
-        document.getElementById('repaymentSheetTitle').textContent = editing ? '编辑还款项目' : '新增还款项目';
-        document.getElementById('repaymentId').value = item?.id || '';
-        document.getElementById('repaymentName').value = item?.name || '';
-        document.getElementById('repaymentAmount').value = item?.amount || '';
-        document.getElementById('repaymentDay').value = item?.dueDay || '';
-        document.getElementById('repaymentAccount').innerHTML = accountOptions(item?.accountId);
-        document.getElementById('repaymentNote').value = item?.note || '';
-        document.getElementById('deleteRepaymentBtn').hidden = !editing;
-        showSheet('repaymentScrim');
-        setTimeout(() => document.getElementById('repaymentName').focus(), 220);
-      }
-
-      function toggleRepayment(id) {
-        const item = state.repayments.find(r => r.id === id);
-        if (!item) return;
-        const key = `${id}:${monthKey()}`;
-        const existing = state.repaymentPaid[key];
-        if (existing) {
-          const account = state.accounts.find(a => a.id === item.accountId);
-          if (account && existing.recordId) {
-            const record = state.records.find(r => r.id === existing.recordId);
-            if (record) account.balance = Math.round((Number(account.balance) + Math.abs(Number(record.delta))) * 100) / 100;
-            state.records = state.records.filter(r => r.id !== existing.recordId);
-          }
-          delete state.repaymentPaid[key];
-          saveState('已撤销本月还款');
-          return;
-        }
-        const account = state.accounts.find(a => a.id === item.accountId);
-        if (!account) { showToast('请先为该项目选择扣款账户'); openRepayment(item); return; }
-        const amount = Number(item.amount);
-        if (Number(account.balance) < amount) { showToast('扣款账户余额不足'); return; }
-        const before = Number(account.balance);
-        account.balance = Math.round((before - amount) * 100) / 100;
-        const record = { id: uid(), accountId: account.id, accountName: account.name, accountType: account.type, delta: -amount, before, after: account.balance, category: '还款', note: item.name, date: dateKey(), createdAt: new Date().toISOString() };
-        state.records.push(record);
-        state.repaymentPaid[key] = { date: dateKey(), recordId: record.id };
-        saveState('本月还款已完成');
-      }
-
       function setDirection(value) {
         direction = value;
         document.querySelectorAll('[data-direction]').forEach(btn => btn.classList.toggle('active', btn.dataset.direction === value));
@@ -737,11 +583,15 @@
 
       document.addEventListener('click', event => {
         const nav = event.target.closest('[data-nav]'); if (nav) navigate(nav.dataset.nav);
+        const accountTarget = event.target.closest('[data-account-filter-target]');
+        if (accountTarget) {
+          accountFilter = accountTarget.dataset.accountFilterTarget;
+          document.querySelectorAll('[data-account-filter]').forEach(chip => chip.classList.toggle('active', chip.dataset.accountFilter === accountFilter));
+          navigate('accounts');
+          render();
+        }
         const addAccount = event.target.closest('[data-open-account]'); if (addAccount) openAccount();
         const addRecord = event.target.closest('[data-open-record]'); if (addRecord) openRecord();
-        const addRepayment = event.target.closest('[data-open-repayment]'); if (addRepayment) openRepayment();
-        const toggle = event.target.closest('[data-toggle-repayment]'); if (toggle) { event.stopPropagation(); toggleRepayment(toggle.dataset.toggleRepayment); }
-        const editRepayment = event.target.closest('[data-edit-repayment]'); if (editRepayment) { event.stopPropagation(); openRepayment(state.repayments.find(r => r.id === editRepayment.dataset.editRepayment)); }
         const quick = event.target.closest('[data-quick-record]'); if (quick) { event.stopPropagation(); openRecord(quick.dataset.quickRecord); }
         const edit = event.target.closest('[data-edit-account]'); if (edit && !event.target.closest('[data-quick-record]')) openAccount(state.accounts.find(a => a.id === edit.dataset.editAccount));
         const close = event.target.closest('[data-close-sheet]'); if (close) closeSheets();
@@ -755,28 +605,6 @@
       document.getElementById('privacyBtn').addEventListener('click', togglePrivacy);
       document.getElementById('settingsPrivacyBtn').addEventListener('click', togglePrivacy);
       window.addEventListener('resize', () => requestAnimationFrame(renderChart));
-
-      document.getElementById('repaymentForm').addEventListener('submit', event => {
-        event.preventDefault();
-        const id = document.getElementById('repaymentId').value;
-        const amount = Number(document.getElementById('repaymentAmount').value);
-        const dueDay = Number(document.getElementById('repaymentDay').value);
-        const name = document.getElementById('repaymentName').value.trim();
-        if (!name || !Number.isFinite(amount) || amount <= 0 || !Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31) { showToast('请填写有效的还款项目'); return; }
-        const payload = { id: id || uid(), name, amount, dueDay, accountId: document.getElementById('repaymentAccount').value, note: document.getElementById('repaymentNote').value.trim(), updatedAt: new Date().toISOString() };
-        if (id) state.repayments = state.repayments.map(item => item.id === id ? payload : item);
-        else state.repayments.push(payload);
-        closeSheets(); saveState(id ? '还款项目已更新' : '还款项目已添加');
-      });
-
-      document.getElementById('deleteRepaymentBtn').addEventListener('click', () => {
-        const id = document.getElementById('repaymentId').value;
-        const item = state.repayments.find(r => r.id === id);
-        if (item && confirm(`删除“${item.name}”？历史还款流水会保留。`)) {
-          state.repayments = state.repayments.filter(r => r.id !== id);
-          closeSheets(); saveState('还款项目已删除');
-        }
-      });
 
       document.getElementById('accountForm').addEventListener('submit', event => {
         event.preventDefault();
