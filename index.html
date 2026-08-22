@@ -102,6 +102,18 @@
     .account-end { text-align: right; min-width: 0; }
     .account-balance { font-size: 14px; font-weight: 750; font-variant-numeric: tabular-nums; max-width: 138px; overflow-wrap: anywhere; }
     .quick-btn { margin-top: 5px; border: 0; background: transparent; color: var(--accent); padding: 0; font-size: 11px; cursor: pointer; }
+    .debt-plan-panel { display: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
+    .debt-plan-panel.visible { display: block; }
+    .debt-plan-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .debt-plan-head h2 { margin: 0; font-size: 15px; }
+    .debt-plan-head span { color: var(--muted); font-size: 11px; }
+    .debt-plan-list { display: grid; gap: 8px; }
+    .debt-plan-row { display: grid; grid-template-columns: 30px minmax(0,1fr) auto; align-items: center; gap: 9px; padding-top: 9px; border-top: 1px solid var(--line); }
+    .debt-plan-mark { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; color: var(--danger); background: var(--danger-soft); font-size: 12px; font-weight: 800; }
+    .debt-plan-row strong { display: block; font-size: 12px; }
+    .debt-plan-row small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .debt-plan-amount { text-align: right; font-size: 12px; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .debt-plan-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 5px 0 2px; }
 
     .empty { border: 1px dashed #cbd3cd; border-radius: var(--radius); padding: 28px 18px; text-align: center; color: var(--muted); }
     .empty-symbol { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-2); color: var(--accent); margin: 0 auto 10px; font-size: 22px; }
@@ -249,6 +261,10 @@
         <button class="chip" data-account-filter="debt">欠款</button>
         <button class="chip" data-account-filter="cash">现金</button>
       </div>
+      <div class="debt-plan-panel" id="debtPlanPanel">
+        <div class="debt-plan-head"><div><h2>每月还款计划</h2><span>点击欠款账户可编辑</span></div></div>
+        <div class="debt-plan-list" id="debtPlanList"></div>
+      </div>
       <div class="account-list" id="allAccounts"></div>
     </section>
 
@@ -305,6 +321,8 @@
           <div class="field"><label for="accountType">账户类型</label><select id="accountType" required><option value="bank">银行卡</option><option value="deposit">存款</option><option value="investment">投资</option><option value="debt">欠款</option><option value="cash">现金</option></select></div>
           <div class="field"><label for="accountBalance">当前余额</label><input id="accountBalance" type="number" inputmode="decimal" min="0" step="0.01" required placeholder="0.00"></div>
           <div class="field"><label for="accountInstitution">机构（可选）</label><input id="accountInstitution" maxlength="30" placeholder="例如：招商银行"></div>
+          <div class="field"><label for="accountMonthlyPayment">每月还款额（欠款账户可填）</label><input id="accountMonthlyPayment" type="number" inputmode="decimal" min="0" step="0.01" placeholder="例如：3000"></div>
+          <div class="field"><label for="accountPaymentDay">每月还款日（欠款账户可填）</label><input id="accountPaymentDay" type="number" inputmode="numeric" min="1" max="31" placeholder="例如：15"></div>
           <div class="field"><label for="accountNote">备注（可选）</label><textarea id="accountNote" maxlength="120" placeholder="账户用途或其他备注"></textarea></div>
         </div>
         <div class="form-actions"><button type="button" class="secondary-btn" data-close-sheet>取消</button><button type="submit" class="primary-btn">保存账户</button></div>
@@ -419,6 +437,19 @@
         </article>`;
       }
 
+      function renderDebtPlan() {
+        const panel = document.getElementById('debtPlanPanel');
+        panel.classList.toggle('visible', accountFilter === 'debt');
+        if (accountFilter !== 'debt') return;
+        const debts = state.accounts.filter(a => a.type === 'debt').sort((a, b) => Number(b.balance) - Number(a.balance));
+        document.getElementById('debtPlanList').innerHTML = debts.length ? debts.map(account => {
+          const monthly = Number(account.monthlyPayment || 0);
+          const day = Number(account.paymentDay || 0);
+          return `<div class="debt-plan-row"><div class="debt-plan-mark">还</div><div><strong>${esc(account.name)}</strong><small>${monthly > 0 ? `每月 ${money(monthly)}` : '尚未设置月还金额'}${day > 0 ? ` · 每月 ${day} 号` : ''}</small></div><div class="debt-plan-amount money">${monthly > 0 ? money(monthly, true) : '待设置'}</div></div>`;
+        }).join('') : '<div class="debt-plan-empty">还没有欠款账户，先新增一个账户类型为“欠款”的账户。</div>';
+        if (state.settings.hideAmounts) document.querySelectorAll('#debtPlanList .money').forEach(el => el.classList.add('amount-hidden'));
+      }
+
       function emptyMarkup(type) {
         if (type === 'account') return `<div class="empty"><div class="empty-symbol">＋</div><strong>还没有账户</strong><span>新增银行卡、存款、投资或欠款账户</span></div>`;
         return `<div class="empty"><div class="empty-symbol">≡</div><strong>还没有流水</strong><span>余额变动后会保存在这里</span></div>`;
@@ -444,6 +475,7 @@
         document.getElementById('homeAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.slice(0, 4).map(a => accountMarkup(a)).join('') : emptyMarkup('account');
         const filtered = accountFilter === 'all' ? sortedAccounts : sortedAccounts.filter(a => a.type === accountFilter);
         document.getElementById('allAccounts').innerHTML = filtered.length ? filtered.map(a => accountMarkup(a, true)).join('') : emptyMarkup('account');
+        renderDebtPlan();
 
         document.getElementById('storageStats').textContent = `${state.accounts.length} 个账户 · ${state.records.length} 条流水`;
         document.getElementById('privacyStatus').textContent = state.settings.hideAmounts ? '已开启' : '已关闭';
@@ -546,6 +578,8 @@
         document.getElementById('accountType').value = account?.type || 'bank';
         document.getElementById('accountBalance').value = editing ? account.balance : '';
         document.getElementById('accountInstitution').value = account?.institution || '';
+        document.getElementById('accountMonthlyPayment').value = account?.monthlyPayment || '';
+        document.getElementById('accountPaymentDay').value = account?.paymentDay || '';
         document.getElementById('accountNote').value = account?.note || '';
         document.getElementById('deleteAccountBtn').hidden = !editing;
         showSheet('accountScrim');
@@ -615,6 +649,8 @@
           id: id || uid(), name: document.getElementById('accountName').value.trim(),
           type: document.getElementById('accountType').value, balance,
           institution: document.getElementById('accountInstitution').value.trim(),
+          monthlyPayment: Number(document.getElementById('accountMonthlyPayment').value) || 0,
+          paymentDay: Number(document.getElementById('accountPaymentDay').value) || 0,
           note: document.getElementById('accountNote').value.trim(), updatedAt: new Date().toISOString()
         };
         if (!payload.name) { showToast('请输入账户名称'); return; }
