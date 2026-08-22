@@ -184,7 +184,7 @@
     .setting-row small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 400; }
     .setting-end { color: var(--muted); font-size: 12px; }
 
-    .bottom-nav { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; padding: 7px 8px calc(7px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.96); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(5, 1fr); backdrop-filter: blur(14px); }
+    .bottom-nav { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; padding: 7px 12px calc(7px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.96); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, 1fr); backdrop-filter: blur(14px); }
     .nav-btn { border: 0; background: transparent; color: #7d8881; height: 50px; display: grid; place-items: center; align-content: center; gap: 3px; font-size: 10px; cursor: pointer; }
     .nav-btn svg { width: 20px; height: 20px; }
     .nav-btn.active { color: var(--accent); font-weight: 750; }
@@ -267,6 +267,14 @@
         <div class="section-head"><h2 class="section-title">我的账户</h2><button class="text-btn" data-nav="accounts">管理账户</button></div>
         <div class="account-list" id="homeAccounts"></div>
       </section>
+      <section class="section">
+        <div class="section-head"><h2 class="section-title">工资与还款</h2><button class="text-btn" data-nav="plans">查看清单</button></div>
+        <div class="summary-strip">
+          <div class="summary-cell"><span>本月工资</span><strong class="money" id="homeSalaryTotal">¥0</strong></div>
+          <div class="summary-cell"><span>待还项目</span><strong id="homeRepaymentPending">0 项</strong></div>
+          <div class="summary-cell"><span>本月还款</span><strong class="money" id="homeRepaymentTotal">¥0</strong></div>
+        </div>
+      </section>
     </section>
 
     <section class="view" id="view-accounts">
@@ -299,8 +307,7 @@
     </section>
 
     <section class="view" id="view-plans">
-      <div class="page-head"><h1>计划</h1><button class="primary-btn" data-open-repayment>+ 还款</button></div>
-      <div id="paydayAlert"></div>
+      <div class="page-head"><h1>清单</h1><button class="primary-btn" data-open-repayment>+ 还款</button></div>
       <div class="plan-card">
         <div class="plan-card-head"><div><h2>本月工资</h2><div class="salary-meta" id="salaryMonthLabel"></div></div><button class="text-btn" data-open-salary>+ 记录工资</button></div>
         <div class="salary-total money" id="salaryMonthTotal">¥0.00</div>
@@ -309,15 +316,6 @@
       <div class="plan-card">
         <div class="plan-card-head"><div><h2>本月还款清单</h2><span id="repaymentSummary"></span></div><button class="text-btn" data-open-repayment>管理</button></div>
         <div class="repayment-list" id="repaymentList"></div>
-      </div>
-      <div class="plan-card">
-        <div class="plan-card-head"><div><h2>发薪日设置</h2><span>每月固定日期</span></div></div>
-        <div class="form-grid">
-          <div class="field"><label for="paydayDay">发薪日</label><input id="paydayDay" type="number" min="1" max="28" inputmode="numeric"></div>
-          <div class="field"><label for="holidayDate">法定节假日（手动添加）</label><div style="display:flex;gap:8px"><input id="holidayDate" type="date" style="flex:1"><button type="button" class="secondary-btn" id="addHolidayBtn">添加</button></div></div>
-        </div>
-        <div class="holiday-list" id="holidayList"></div>
-        <div class="salary-meta" style="margin-top:10px">周末和这里添加的节假日会自动顺延到下一个工作日。</div>
       </div>
     </section>
 
@@ -350,7 +348,6 @@
     <button class="nav-btn active" data-nav="home"><i data-lucide="layout-dashboard"></i><span>概览</span></button>
     <button class="nav-btn" data-nav="accounts"><i data-lucide="wallet-cards"></i><span>账户</span></button>
     <button class="nav-btn" data-nav="records"><i data-lucide="list-checks"></i><span>流水</span></button>
-    <button class="nav-btn" data-nav="plans"><i data-lucide="calendar-clock"></i><span>计划</span></button>
     <button class="nav-btn" data-nav="settings"><i data-lucide="settings-2"></i><span>设置</span></button>
   </nav>
 
@@ -448,7 +445,7 @@
       let toastTimer;
 
       function defaultState() {
-        return { version: 2, accounts: [], records: [], salaryRecords: [], repayments: [], repaymentPaid: {}, settings: { hideAmounts: false, paydayDay: 8, holidays: [], reminderEnabled: false, lastReminderDate: null }, savedAt: null };
+        return { version: 2, accounts: [], records: [], salaryRecords: [], repayments: [], repaymentPaid: {}, settings: { hideAmounts: false }, savedAt: null };
       }
 
       function loadState() {
@@ -459,7 +456,7 @@
             parsed.salaryRecords = Array.isArray(parsed.salaryRecords) ? parsed.salaryRecords : [];
             parsed.repayments = Array.isArray(parsed.repayments) ? parsed.repayments : [];
             parsed.repaymentPaid = parsed.repaymentPaid || {};
-            parsed.settings = { ...defaults.settings, ...(parsed.settings || {}), holidays: Array.isArray(parsed.settings?.holidays) ? parsed.settings.holidays : [] };
+            parsed.settings = { ...defaults.settings, ...(parsed.settings || {}) };
             return parsed;
           }
         } catch (_) {}
@@ -500,24 +497,6 @@
       function monthKey(date = new Date()) { return dateKey(date).slice(0, 7); }
 
       function localDate(key) { return new Date(`${key}T12:00:00`); }
-
-      function isNonWorking(date) {
-        const key = dateKey(date);
-        return date.getDay() === 0 || date.getDay() === 6 || (state.settings.holidays || []).includes(key);
-      }
-
-      function adjustedPayday(year, monthIndex) {
-        const day = Math.min(Math.max(Number(state.settings.paydayDay) || 8, 1), 28);
-        const date = new Date(year, monthIndex, day, 12, 0, 0);
-        while (isNonWorking(date)) date.setDate(date.getDate() + 1);
-        return date;
-      }
-
-      function nextPayday(reference = new Date()) {
-        const current = adjustedPayday(reference.getFullYear(), reference.getMonth());
-        if (dateKey(current) >= dateKey(reference)) return current;
-        return adjustedPayday(reference.getFullYear(), reference.getMonth() + 1);
-      }
 
       function daysUntil(target, reference = new Date()) {
         const a = new Date(reference); a.setHours(0, 0, 0, 0);
@@ -577,6 +556,14 @@
         const filtered = accountFilter === 'all' ? sortedAccounts : sortedAccounts.filter(a => a.type === accountFilter);
         document.getElementById('allAccounts').innerHTML = filtered.length ? filtered.map(a => accountMarkup(a, true)).join('') : emptyMarkup('account');
 
+        const currentMonth = monthKey();
+        const homeSalaryTotal = state.salaryRecords.filter(r => r.date?.startsWith(currentMonth)).reduce((sum, r) => sum + Number(r.amount || 0), 0);
+        const paidRepayments = state.repayments.filter(item => state.repaymentPaid[`${item.id}:${currentMonth}`]);
+        const homeRepaymentTotal = paidRepayments.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+        document.getElementById('homeSalaryTotal').textContent = money(homeSalaryTotal, true);
+        document.getElementById('homeRepaymentPending').textContent = `${state.repayments.length - paidRepayments.length} 项`;
+        document.getElementById('homeRepaymentTotal').textContent = money(homeRepaymentTotal, true);
+
         document.getElementById('storageStats').textContent = `${state.accounts.length} 个账户 · ${state.records.length} 条流水`;
         document.getElementById('privacyStatus').textContent = state.settings.hideAmounts ? '已开启' : '已关闭';
         document.getElementById('lastSaved').textContent = state.savedAt ? new Date(state.savedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '尚未保存';
@@ -615,20 +602,6 @@
 
       function renderPlans() {
         const now = new Date();
-        const payday = nextPayday(now);
-        const days = daysUntil(payday, now);
-        const paydayAlert = document.getElementById('paydayAlert');
-        const paydayText = days === 0 ? '今天是发薪日' : `还有 ${days} 天发薪`;
-        const paydayNote = isNonWorking(new Date(now.getFullYear(), now.getMonth(), Number(state.settings.paydayDay) || 8, 12, 0, 0))
-          ? `原定每月 ${state.settings.paydayDay || 8} 号，遇到周末或节假日已顺延到 ${shortDate(dateKey(payday))}`
-          : `每月 ${state.settings.paydayDay || 8} 号到账，顺延规则已开启`;
-        paydayAlert.innerHTML = `<div class="plan-alert ${days === 0 ? 'overdue' : ''}">
-          <div class="plan-alert-title"><span>工资提醒</span><span>${shortDate(dateKey(payday))}</span></div>
-          <div class="plan-alert-main">${paydayText}</div>
-          <div class="plan-alert-note">${paydayNote}</div>
-          <div class="plan-actions"><button class="secondary-btn" data-enable-reminder>${state.settings.reminderEnabled ? '提醒已开启' : '开启浏览器提醒'}</button><button class="primary-btn" data-open-salary>记录工资</button></div>
-        </div>`;
-
         const currentMonth = monthKey(now);
         const currentSalary = state.salaryRecords.filter(r => r.date && r.date.startsWith(currentMonth)).sort((a, b) => b.date.localeCompare(a.date));
         const salaryTotal = currentSalary.reduce((sum, r) => sum + Number(r.amount || 0), 0);
@@ -652,10 +625,6 @@
         }).join('');
         document.getElementById('repaymentSummary').textContent = repayments.length ? `${paidCount}/${repayments.length} 已完成` : '还没有项目';
         document.getElementById('repaymentList').innerHTML = repaymentHtml || '<div class="plan-empty">添加房贷、信用卡、花呗等每月固定还款。</div>';
-
-        document.getElementById('paydayDay').value = state.settings.paydayDay || 8;
-        const holidays = [...(state.settings.holidays || [])].sort();
-        document.getElementById('holidayList').innerHTML = holidays.length ? holidays.map(day => `<span class="holiday-tag">${shortDate(day)}<button type="button" data-remove-holiday="${day}" aria-label="删除节假日">×</button></span>`).join('') : '<span class="salary-meta">暂未添加节假日</span>';
         document.querySelectorAll('#salaryMonthTotal, #salaryList .money, #repaymentList .money').forEach(el => el.classList.toggle('amount-hidden', !!state.settings.hideAmounts));
       }
 
@@ -797,28 +766,6 @@
         saveState('本月还款已完成');
       }
 
-      function checkPaydayReminder() {
-        if (!state.settings.reminderEnabled || !('Notification' in window) || Notification.permission !== 'granted') return;
-        const now = new Date();
-        const payday = adjustedPayday(now.getFullYear(), now.getMonth());
-        const today = dateKey(now);
-        if (dateKey(payday) === today && state.settings.lastReminderDate !== today) {
-          new Notification('我的账本 · 工资提醒', { body: '今天是发薪日，记得记录工资收入。' });
-          state.settings.lastReminderDate = today;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        }
-      }
-
-      async function enableReminder() {
-        if (!('Notification' in window)) { showToast('当前浏览器不支持通知'); return; }
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          state.settings.reminderEnabled = true;
-          saveState('浏览器提醒已开启');
-          checkPaydayReminder();
-        } else showToast('未获得通知权限');
-      }
-
       function setDirection(value) {
         direction = value;
         document.querySelectorAll('[data-direction]').forEach(btn => btn.classList.toggle('active', btn.dataset.direction === value));
@@ -843,8 +790,6 @@
         const addRepayment = event.target.closest('[data-open-repayment]'); if (addRepayment) openRepayment();
         const toggle = event.target.closest('[data-toggle-repayment]'); if (toggle) { event.stopPropagation(); toggleRepayment(toggle.dataset.toggleRepayment); }
         const editRepayment = event.target.closest('[data-edit-repayment]'); if (editRepayment) { event.stopPropagation(); openRepayment(state.repayments.find(r => r.id === editRepayment.dataset.editRepayment)); }
-        const reminder = event.target.closest('[data-enable-reminder]'); if (reminder) enableReminder();
-        const removeHoliday = event.target.closest('[data-remove-holiday]'); if (removeHoliday) { state.settings.holidays = (state.settings.holidays || []).filter(day => day !== removeHoliday.dataset.removeHoliday); saveState('节假日已移除'); }
         const quick = event.target.closest('[data-quick-record]'); if (quick) { event.stopPropagation(); openRecord(quick.dataset.quickRecord); }
         const edit = event.target.closest('[data-edit-account]'); if (edit && !event.target.closest('[data-quick-record]')) openAccount(state.accounts.find(a => a.id === edit.dataset.editAccount));
         const close = event.target.closest('[data-close-sheet]'); if (close) closeSheets();
@@ -857,17 +802,6 @@
       document.getElementById('recordSearch').addEventListener('input', renderRecords);
       document.getElementById('privacyBtn').addEventListener('click', togglePrivacy);
       document.getElementById('settingsPrivacyBtn').addEventListener('click', togglePrivacy);
-      document.getElementById('paydayDay').addEventListener('change', event => {
-        const value = Math.min(Math.max(Number(event.target.value) || 8, 1), 28);
-        state.settings.paydayDay = value; event.target.value = value; saveState('发薪日已更新');
-      });
-      document.getElementById('addHolidayBtn').addEventListener('click', () => {
-        const value = document.getElementById('holidayDate').value;
-        if (!value) { showToast('请选择节假日日期'); return; }
-        state.settings.holidays = Array.from(new Set([...(state.settings.holidays || []), value])).sort();
-        document.getElementById('holidayDate').value = '';
-        saveState('节假日已添加');
-      });
       window.addEventListener('resize', () => requestAnimationFrame(renderChart));
 
       document.getElementById('salaryForm').addEventListener('submit', event => {
@@ -978,8 +912,6 @@
       document.getElementById('todayText').textContent = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
       document.getElementById('recordDate').value = dateKey();
       render();
-      checkPaydayReminder();
-      setInterval(checkPaydayReminder, 60000);
     })();
   </script>
 </body>
